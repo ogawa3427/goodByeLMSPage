@@ -23,6 +23,14 @@
       "js": ["scripts/makeTable.js"],
       "run_at": "document_idle",
       "all_frames": true
+    },
+    {
+      "matches": [
+        "https://ogawa3427.github.io/goodByeLMSPage/*"
+      ],
+      "js": ["scripts/showTable.js"],
+      "run_at": "document_idle",
+      "all_frames": true
     }
   ],
   "host_permissions": [

@@ -11,6 +11,7 @@
         courseData,
         timestamp: Date.now()
       };
+      console.log('ストレージに保存するデータ:', data);
       chrome.storage.local.set({ courseData: data }, () => {
         if (chrome.runtime.lastError) {
           console.error('ストレージへの保存に失敗:', chrome.runtime.lastError);

@@ -15,7 +15,13 @@
   // データを保存する関数
   const saveToStorage = (courseInfo) => {
     try {
-      chrome.storage.local.set({ courseInfo }, () => {
+      const data = {
+        courseData: {
+          [courseInfo.day + courseInfo.period]: courseInfo
+        },
+        timestamp: Date.now()
+      };
+      chrome.storage.local.set(data, () => {
         if (chrome.runtime.lastError) {
           console.error('ストレージへの保存に失敗:', chrome.runtime.lastError);
           return;
@@ -27,9 +33,44 @@
     }
   };
 
+  // データを読み込む関数
+  const loadFromStorage = () => {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['courseData'], (result) => {
+        if (chrome.runtime.lastError) {
+          console.error('ストレージからの読み込みに失敗:', chrome.runtime.lastError);
+          resolve(null);
+          return;
+        }
+
+        const data = result.courseData;
+        if (!data) {
+          resolve(null);
+          return;
+        }
+
+        const now = Date.now();
+        
+        // データの有効期限をチェック
+        if (now - data.timestamp > CACHE_EXPIRY) {
+          console.log('キャッシュの有効期限が切れています');
+          chrome.storage.local.remove('courseData');
+          resolve(null);
+          return;
+        }
+
+        console.log('キャッシュされた授業データを使用します');
+        resolve(data.courseData);
+      });
+    });
+  };
+
   // 実際の置換処理
-  const patchLmsLink = () => {
+  const patchLmsLink = async () => {
     console.log('LMSリンクのパッチ処理開始');
+    // 保存されたデータを読み込む
+    const savedData = await loadFromStorage();
+    
     // ヘッダーメニューのリンクも含める
     const links = document.querySelectorAll('a[onclick*="openMenuFunc"][onclick*="lms-course"], .base-header__custom-menu a[onclick*="openMenuFunc"][onclick*="lms-course"]');
     console.log('対象リンク数:', links.length);
@@ -112,13 +153,18 @@
       }
       
       const [_, subject, teacher] = match;
+      const day = row.querySelector('td:nth-child(2)')?.textContent?.trim() || '';
+      const period = row.querySelector('td:nth-child(3)')?.textContent?.trim() || '';
+      
+      // 保存されたデータからLMSリンクを取得
+      const savedCourseInfo = savedData?.[day + period];
       const courseInfo = {
         subject: subject.trim(),
         teacher: teacher.trim(),
         url: firstCell.querySelector('a')?.href || '',
-        lmsLink: link.href,
-        day: row.querySelector('td:nth-child(2)')?.textContent?.trim() || '',
-        period: row.querySelector('td:nth-child(3)')?.textContent?.trim() || ''
+        lmsLink: savedCourseInfo?.lmsLink || link.href,
+        day,
+        period
       };
       console.log('抽出した授業情報:', courseInfo);
 
