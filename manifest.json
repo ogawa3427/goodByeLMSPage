@@ -7,11 +7,29 @@
     "storage",
     "activeTab"
   ],
-  "host_permissions": [
-    "https://foo.example.com/*",
-    "https://bar.example.com/*",
-    "https://baz.example.com/*"
+  "content_scripts": [
+    {
+      "matches": [
+        "https://acanthus.cis.kanazawa-u.ac.jp/base/top/*"
+      ],
+      "js": ["scripts/inject.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/*"
+      ],
+      "js": ["scripts/makeTable.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
   ],
-  "background": { "service_worker": "service_worker.js" },
+  "host_permissions": [
+    "https://acanthus.cis.kanazawa-u.ac.jp/base/top/",
+    "https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/*",
+    "https://ogawa3427.github.io/goodByeLMSPage/"
+  ],
+  "background": { "scripts": ["service_worker.js"] },
   "action": { "default_title": "Tweaker" }
 } 

@@ -4,16 +4,16 @@ chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
 
   const url = new URL(tab.url);
 
-  // ① onClick を空にして <a> 追加
-  if (url.hostname === 'foo.example.com') {
+  // 金沢大学のLMS
+  if (url.hostname === 'acanthus.cis.kanazawa-u.ac.jp') {
     chrome.scripting.executeScript({
       target: { tabId },
       files: ['scripts/inject.js']
     });
   }
 
-  // ② a タグ情報を保存
-  else if (url.hostname === 'bar.example.com') {
+  // 金沢大学のポータル
+  else if (url.hostname === 'eduweb.sta.kanazawa-u.ac.jp') {
     chrome.scripting.executeScript({
       target: { tabId },
       func: () => {
@@ -26,8 +26,8 @@ chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
     });
   }
 
-  // ③ 保存済みデータを読み込んで <table> 生成
-  else if (url.hostname === 'baz.example.com') {
+  // 設定ページ
+  else if (url.hostname === 'ogawa3427.github.io') {
     chrome.scripting.executeScript({
       target: { tabId },
       files: ['scripts/table.js']

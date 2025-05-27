@@ -1,11 +1,12 @@
 {
-  "name": "url-specific-dom-tweaker",
-  "version": "0.0.1",
-  "description": "URLに応じてDOMを操作するChrome拡張機能",
+  "name": "goodbye-lms-page",
+  "version": "1.0.0",
+  "description": "金沢大学の時間割ページからデータを取得するスクリプト",
+  "main": "scripts/makeTable.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node scripts/makeTable.js"
   },
-  "devDependencies": {
-    "web-ext": "^7.10.0"
+  "dependencies": {
+    "puppeteer": "^21.0.0"
   }
 } 
