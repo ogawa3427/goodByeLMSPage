@@ -7,7 +7,20 @@
       if (link.dataset.lmsPatched) return;
       link.dataset.lmsPatched = '1';
 
-      link.href = 'https://ogawa3427.github.io/goodByeLMSPage/';
+      // 教員情報を取得
+      const staffInfo = {
+        name: link.closest('tr')?.querySelector('td:first-child')?.textContent?.trim() || '',
+        url: link.closest('tr')?.querySelector('td:first-child a')?.href || '',
+        lmsLink: link.href,
+        day: link.closest('tr')?.querySelector('td:nth-child(2)')?.textContent?.trim() || '',
+        period: link.closest('tr')?.querySelector('td:nth-child(3)')?.textContent?.trim() || ''
+      };
+
+      // ベースURLにJSONデータを追加
+      const baseUrl = 'https://ogawa3427.github.io/goodByeLMSPage/';
+      const params = new URLSearchParams();
+      params.set('data', JSON.stringify(staffInfo));
+      link.href = `${baseUrl}?${params.toString()}`;
       link.target = '_blank';
       const span = link.querySelector('span');
       if (span) span.textContent = 'LMS';

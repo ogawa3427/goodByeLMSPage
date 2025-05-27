@@ -4,8 +4,100 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Good Bye LMS Page</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f5f5f5;
+        }
+        a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
     <h1>Good Bye LMS Page</h1>
+    <div id="content"></div>
+
+    <script>
+        (() => {
+            const params = new URLSearchParams(window.location.search);
+            const data = params.get('data');
+            
+            if (!data) {
+                document.getElementById('content').innerHTML = '<p>データがありません</p>';
+                return;
+            }
+
+            try {
+                const staffInfo = JSON.parse(data);
+                const table = document.createElement('table');
+                
+                // ヘッダー行
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+                ['教員名', '曜日', '時限', 'LMSリンク'].forEach(text => {
+                    const th = document.createElement('th');
+                    th.textContent = text;
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+
+                // データ行
+                const tbody = document.createElement('tbody');
+                const row = document.createElement('tr');
+                
+                // 教員名
+                const nameCell = document.createElement('td');
+                const nameLink = document.createElement('a');
+                nameLink.href = staffInfo.url;
+                nameLink.textContent = staffInfo.name;
+                nameLink.target = '_blank';
+                nameCell.appendChild(nameLink);
+                row.appendChild(nameCell);
+
+                // 曜日
+                const dayCell = document.createElement('td');
+                dayCell.textContent = staffInfo.day;
+                row.appendChild(dayCell);
+
+                // 時限
+                const periodCell = document.createElement('td');
+                periodCell.textContent = staffInfo.period;
+                row.appendChild(periodCell);
+
+                // LMSリンク
+                const lmsCell = document.createElement('td');
+                if (staffInfo.lmsLink) {
+                    const lmsLink = document.createElement('a');
+                    lmsLink.href = staffInfo.lmsLink;
+                    lmsLink.textContent = 'LMS';
+                    lmsLink.target = '_blank';
+                    lmsCell.appendChild(lmsLink);
+                }
+                row.appendChild(lmsCell);
+
+                tbody.appendChild(row);
+                table.appendChild(tbody);
+
+                document.getElementById('content').appendChild(table);
+            } catch (e) {
+                console.error('データの解析に失敗:', e);
+                document.getElementById('content').innerHTML = '<p>データの解析に失敗しました</p>';
+            }
+        })();
+    </script>
 </body>
 </html>

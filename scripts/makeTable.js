@@ -1,10 +1,17 @@
 (() => {
   console.log('makeTable.js (readyState対応版) 読み込み');
   
+  // データの有効期限（1ヶ月）
+  const CACHE_EXPIRY = 30 * 24 * 60 * 60 * 1000;
+  
   // データをlocalStorageに保存する関数
   const saveToLocalStorage = (staffInfo) => {
     try {
-      localStorage.setItem('staffInfo', JSON.stringify(staffInfo));
+      const data = {
+        staffInfo,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('staffInfo', JSON.stringify(data));
       console.log('データをlocalStorageに保存しました');
     } catch (error) {
       console.error('localStorageへの保存に失敗:', error);
@@ -15,7 +22,20 @@
   const loadFromLocalStorage = () => {
     try {
       const data = localStorage.getItem('staffInfo');
-      return data ? JSON.parse(data) : null;
+      if (!data) return null;
+
+      const parsedData = JSON.parse(data);
+      const now = Date.now();
+      
+      // データの有効期限をチェック
+      if (now - parsedData.timestamp > CACHE_EXPIRY) {
+        console.log('キャッシュの有効期限が切れています');
+        localStorage.removeItem('staffInfo');
+        return null;
+      }
+
+      console.log('キャッシュされたデータを使用します');
+      return parsedData.staffInfo;
     } catch (error) {
       console.error('localStorageからの読み込みに失敗:', error);
       return null;
@@ -51,10 +71,16 @@
   // 教員名とURLを取得する関数
   const getStaffInfo = async () => {
     // まずlocalStorageからデータを確認
-    const cachedData = loadFromLocalStorage();
-    if (cachedData) {
-      console.log('キャッシュされたデータを使用します');
-      return cachedData;
+    // const cachedData = loadFromLocalStorage();
+    // if (cachedData) {
+    //   return cachedData;
+    // }
+
+    // ユーザーに確認
+    const shouldFetch = confirm('新しいデータを取得しますか？\n※多数のGETリクエストが発生します');
+    if (!shouldFetch) {
+      console.log('ユーザーがデータ取得をキャンセルしました');
+      return [];
     }
 
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
