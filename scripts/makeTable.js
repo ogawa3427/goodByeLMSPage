@@ -4,42 +4,55 @@
   // データの有効期限（1ヶ月）
   const CACHE_EXPIRY = 30 * 24 * 60 * 60 * 1000;
   
-  // データをlocalStorageに保存する関数
-  const saveToLocalStorage = (staffInfo) => {
+  // データをchrome.storage.localに保存する関数
+  const saveToStorage = (courseData) => {
     try {
       const data = {
-        staffInfo,
+        courseData,
         timestamp: Date.now()
       };
-      localStorage.setItem('staffInfo', JSON.stringify(data));
-      console.log('データをlocalStorageに保存しました');
+      chrome.storage.local.set({ courseData: data }, () => {
+        if (chrome.runtime.lastError) {
+          console.error('ストレージへの保存に失敗:', chrome.runtime.lastError);
+          return;
+        }
+        console.log('授業データをストレージに保存しました');
+      });
     } catch (error) {
-      console.error('localStorageへの保存に失敗:', error);
+      console.error('ストレージへの保存に失敗:', error);
     }
   };
 
-  // localStorageからデータを読み込む関数
-  const loadFromLocalStorage = () => {
-    try {
-      const data = localStorage.getItem('staffInfo');
-      if (!data) return null;
+  // chrome.storage.localからデータを読み込む関数
+  const loadFromStorage = () => {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['courseData'], (result) => {
+        if (chrome.runtime.lastError) {
+          console.error('ストレージからの読み込みに失敗:', chrome.runtime.lastError);
+          resolve(null);
+          return;
+        }
 
-      const parsedData = JSON.parse(data);
-      const now = Date.now();
-      
-      // データの有効期限をチェック
-      if (now - parsedData.timestamp > CACHE_EXPIRY) {
-        console.log('キャッシュの有効期限が切れています');
-        localStorage.removeItem('staffInfo');
-        return null;
-      }
+        const data = result.courseData;
+        if (!data) {
+          resolve(null);
+          return;
+        }
 
-      console.log('キャッシュされたデータを使用します');
-      return parsedData.staffInfo;
-    } catch (error) {
-      console.error('localStorageからの読み込みに失敗:', error);
-      return null;
-    }
+        const now = Date.now();
+        
+        // データの有効期限をチェック
+        if (now - data.timestamp > CACHE_EXPIRY) {
+          console.log('キャッシュの有効期限が切れています');
+          chrome.storage.local.remove('courseData');
+          resolve(null);
+          return;
+        }
+
+        console.log('キャッシュされた授業データを使用します');
+        resolve(data.courseData);
+      });
+    });
   };
 
   // URLに対してGETリクエストを送信する関数
@@ -70,22 +83,22 @@
 
   // 教員名とURLを取得する関数
   const getStaffInfo = async () => {
-    // まずlocalStorageからデータを確認
-    // const cachedData = loadFromLocalStorage();
-    // if (cachedData) {
-    //   return cachedData;
-    // }
+    // まずストレージからデータを確認
+    const cachedData = await loadFromStorage();
+    if (cachedData) {
+      return cachedData;
+    }
 
     // ユーザーに確認
     const shouldFetch = confirm('新しいデータを取得しますか？\n※多数のGETリクエストが発生します');
     if (!shouldFetch) {
       console.log('ユーザーがデータ取得をキャンセルしました');
-      return [];
+      return {};
     }
 
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
     const periods = ['1', '2', '3', '4', '5'];
-    const staffInfo = [];
+    const courseData = {};
     
     for (const day of days) {
       for (const period of periods) {
@@ -94,34 +107,45 @@
         if (staffElement) {
           const linkElement = staffElement.querySelector('a');
           if (linkElement) {
-            const name = linkElement.textContent.trim();
+            const fullText = linkElement.textContent.trim();
             const url = linkElement.href;
-            if (name) {
+            
+            // 科目名と教員名を分離
+            const match = fullText.match(/(.*?)\((.*?)\)/);
+            if (match) {
+              const [_, subject, teacher] = match;
               const lmsLink = await fetchUrl(url);
-              staffInfo.push({ name, url, lmsLink, day, period });
-              console.log(`要素発見: ${day}${period} - ${name} - ${url}`);
+              
+              courseData[`${day}${period}`] = {
+                subject: subject.trim(),
+                teacher: teacher.trim(),
+                lmsLink: lmsLink,
+                url: url
+              };
+              
+              console.log(`要素発見: ${day}${period} - ${fullText} - ${url}`);
             }
           }
         }
       }
     }
     
-    if (staffInfo.length === 0) {
+    if (Object.keys(courseData).length === 0) {
       console.log('教員名要素が見つかりません');
-      return [];
+      return {};
     }
 
-    // データをlocalStorageに保存
-    saveToLocalStorage(staffInfo);
+    // データをストレージに保存
+    saveToStorage(courseData);
     
-    return staffInfo;
+    return courseData;
   };
 
   // 教員情報を探してログ出力
   const logStaffInfo = async () => {
-    const staffInfo = await getStaffInfo();
-    if (staffInfo.length > 0) {
-      console.log('教員情報一覧:', staffInfo);
+    const courseData = await getStaffInfo();
+    if (Object.keys(courseData).length > 0) {
+      console.log('授業データ一覧:', courseData);
     }
   };
 
