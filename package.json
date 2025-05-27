@@ -1,0 +1,11 @@
+{
+  "name": "url-specific-dom-tweaker",
+  "version": "0.0.1",
+  "description": "URLに応じてDOMを操作するChrome拡張機能",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "web-ext": "^7.10.0"
+  }
+} 

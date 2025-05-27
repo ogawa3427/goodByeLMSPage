@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "URL-Specific DOM Tweaker",
+  "version": "0.0.1",
+  "permissions": [
+    "scripting",
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://foo.example.com/*",
+    "https://bar.example.com/*",
+    "https://baz.example.com/*"
+  ],
+  "background": { "service_worker": "service_worker.js" },
+  "action": { "default_title": "Tweaker" }
+} 
