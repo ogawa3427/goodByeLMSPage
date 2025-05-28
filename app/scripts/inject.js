@@ -93,7 +93,7 @@ console.log('アカンサスのトップページに注入されました');
         const span = link.querySelector('span');
         if (span) {
           console.log('span要素のテキストを変更:', span.textContent, '→ LMS');
-          span.textContent = 'LMS';
+          span.textContent = '偽LMS';
         }
 
         // onclick属性を削除
@@ -150,7 +150,7 @@ console.log('アカンサスのトップページに注入されました');
       const span = link.querySelector('span');
       if (span) {
         console.log('span要素のテキストを変更:', span.textContent, '→ LMS');
-        span.textContent = 'LMS';
+        span.textContent = '偽LMS';
       }
 
       // onclick属性を削除
