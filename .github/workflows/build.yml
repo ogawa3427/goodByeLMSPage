@@ -1,5 +1,9 @@
 name: Build and Release
 
+# ワークフロー全体に contents: write を付与
+permissions:
+  contents: write
+
 on:
   push:
     tags:
@@ -10,35 +14,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          
+
       - name: Install dependencies
         run: npm ci
-        
+
       - name: Build extensions
-        run: npm run build firefox && npm run build chrome
-        env:
-          NODE_OPTIONS: --openssl-legacy-provider
-          
-      - name: Create Firefox zip
         run: |
-          cd dist/firefox
-          zip -r ../../goodByeLMSPage-firefox.zip .
-          
-      - name: Create Chrome zip  
-        run: |
-          cd dist/chrome
-          zip -r ../../goodByeLMSPage-chrome.zip .
-          
+          npm run build firefox
+          npm run build chrome
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
+          # マルチライン文字列にしてファイルを列挙
           files: |
             goodByeLMSPage-firefox.zip
             goodByeLMSPage-chrome.zip
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
