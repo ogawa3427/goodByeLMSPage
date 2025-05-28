@@ -31,9 +31,6 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          # マルチライン文字列にしてファイルを列挙
-          files: |
-            goodByeLMSPage-firefox.zip
-            goodByeLMSPage-chrome.zip
+          files: packages/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
