@@ -1,3 +1,8 @@
+// バックグラウンドスクリプト
+chrome.runtime.onInstalled.addListener(() => {
+  console.log('拡張機能がインストールされました');
+});
+
 // URL 判定 → 対象ページに該当スクリプトを注入
 chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
   if (info.status !== 'complete' || !tab.url) return;
@@ -16,13 +21,7 @@ chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
   else if (url.hostname === 'eduweb.sta.kanazawa-u.ac.jp') {
     chrome.scripting.executeScript({
       target: { tabId },
-      func: () => {
-        const target = document.getElementById('target-id');
-        const a = target?.querySelector('a');
-        if (a) {
-          chrome.storage.local.set({ savedLink: { href: a.href, text: a.textContent } });
-        }
-      }
+      files: ['scripts/makeTable.js']
     });
   }
 
@@ -30,7 +29,7 @@ chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
   else if (url.hostname === 'ogawa3427.github.io') {
     chrome.scripting.executeScript({
       target: { tabId },
-      files: ['scripts/table.js']
+      files: ['scripts/showTable.js']
     });
   }
 }); 

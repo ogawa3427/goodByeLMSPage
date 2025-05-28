@@ -1,3 +1,6 @@
+// eduwebのページに注入されるスクリプト
+console.log('eduwebのページに注入されました');
+
 (() => {
   console.log('makeTable.js (readyState対応版) 読み込み');
   
@@ -161,10 +164,4 @@
       logStaffInfo();
     });
   }
-})();
-
-// メニュー
-// https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/Acting/ActingList.aspx?lct_year=2025&lct_term=00&lct_cd=55-23124
-
-// 詳細
-// https://acanthus.cis.kanazawa-u.ac.jp/base/lms-course/sso-link/?courseId=25035531116000&systemType=1
+})(); 

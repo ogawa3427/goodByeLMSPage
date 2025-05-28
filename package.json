@@ -1,12 +1,22 @@
 {
-  "name": "goodbye-lms-page",
-  "version": "1.0.0",
-  "description": "金沢大学の時間割ページからデータを取得するスクリプト",
-  "main": "scripts/makeTable.js",
+  "name": "goodByeLMSPage",
+  "version": "0.0.1",
+  "description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
   "scripts": {
-    "start": "node scripts/makeTable.js"
+    "dev": "NODE_OPTIONS=--openssl-legacy-provider webextension-toolbox dev",
+    "build": "NODE_OPTIONS=--openssl-legacy-provider webextension-toolbox build",
+    "debug": "NODE_OPTIONS=--openssl-legacy-provider webextension-toolbox dev firefox",
+    "debug:chrome": "NODE_OPTIONS=--openssl-legacy-provider webextension-toolbox dev chrome",
+    "debug:edge": "NODE_OPTIONS=--openssl-legacy-provider webextension-toolbox dev edge"
   },
-  "dependencies": {
-    "puppeteer": "^21.0.0"
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@babel/preset-env": "^7.24.0",
+    "webextension-toolbox": "^3.0.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "engines": {
+    "node": ">=14.0.0 <=23.11.0"
   }
-} 
+}

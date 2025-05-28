@@ -1,5 +1,14 @@
+// GitHub Pagesのページに注入されるスクリプト
+console.log('GitHub Pagesのページに注入されました');
+let isShownTable = false;
+
 // クソみたいなLMSのデータを読み込む
 chrome.storage.local.get(['courseData'], (result) => {
+  if (isShownTable) {
+    console.log('すでにテーブルが表示されています');
+    return;
+  }
+  isShownTable = true;
   if (chrome.runtime.lastError) {
     console.error('データの読み込みに失敗:', chrome.runtime.lastError);
     return;
@@ -89,4 +98,6 @@ chrome.storage.local.get(['courseData'], (result) => {
 
   // テーブルをbodyに追加
   document.body.appendChild(table);
-});
+  console.log('テーブルを表示しました');
+  isShownTable = true;
+}); 

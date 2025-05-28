@@ -1,38 +1,85 @@
-# GoodByeLMSPage
+# Good Bye LMS Page
 
-クソみたいなLMSの使いづらいUIを改善するChrome拡張機能です。金沢大学の学生向けに開発されています。
-
-## 開発の経緯
-
-2025年5月27日の夕方、製作者が自宅で寝ていたところ、空飛ぶスパゲッティモンスターが夢枕に立って（浮かんで？）、「アカンサスポータルのトップ画面にあるLMSコース一覧へのリンクおよびリンク先ページが、学術メディア創成センターの偉い人マンによって削除されようとしている、これはアカンサスポータル軽量化のため」と告げました。製作者はこのお告げの通りならば金沢大学の学生は大いに苦しむことを予期し、ノアの方舟の如くこの拡張機能を作ったのであります。
+金沢大学のクソみたいなLMSを少しでも使いやすくするためのChrome拡張機能です。
 
 ## 機能
 
-- 学務情報サービスの時間割からLMSの各コースへのリンクを保存
-- アカンサスポータルのツールバーにある「LMS」のリンク先を変更
+- アカンサスのLMSリンクを直接開けるようにパッチ
+- eduwebの時間割から授業情報を取得
+- 授業情報をテーブル形式で表示
 
+## インストール方法
 
-## 使用方法
+1. このリポジトリをクローン
+```bash
+git clone https://github.com/ogawa3427/goodByeLMSPage.git
+```
 
-1. 学務情報サービスの[時間割のとこ](https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/Regist/RegistList.aspx)に行くとLMSへのリンクが保存される(初回のみ)
-2. アカンサスポータルのツールバーにある「LMS」のリンクが自動的に変更されます
+2. Chrome拡張機能の管理ページを開く
+   - Chromeのアドレスバーに `chrome://extensions/` と入力
+   - 右上の「デベロッパーモード」をオン
 
-## 技術スタック
+3. 「パッケージ化されていない拡張機能を読み込む」をクリック
+   - `goodByeLMSPage/app` ディレクトリを選択
 
-- JavaScript
-- Chrome Extension Manifest V3
-- Chrome Storage API
+## 使い方
+
+1. eduwebの時間割ページにアクセス
+   - データ取得の確認ダイアログが表示されたら「OK」をクリック
+   - 授業情報が自動的に取得・保存されます
+
+2. アカンサスのLMSページにアクセス
+   - LMSリンクが自動的にパッチされ、直接開けるようになります
+
+3. GitHub Pagesのページにアクセス
+   - 保存された授業情報がテーブル形式で表示されます
 
 ## 注意事項
 
+- データの有効期限は30日間です
+- 多数のGETリクエストが発生する場合があります
 - この拡張機能は非公式であり、金沢大学とは一切関係ありません
-- 大学外部へのデータ送信は一切行いません（嘘だと思うんならカワイイ私のソースコード https://github.com/ogawa3427/goodByeLMSPage を見てね）
-- 個人情報の取り扱いには十分注意してください
+
+## 開発
+
+```bash
+# 依存関係のインストール
+npm install
+
+# 開発モードで実行
+npm run dev chrome
+```
+
+## ビルド
+
+```bash
+# Chrome用にビルド
+npm run build chrome
+```
 
 ## ライセンス
 
-MIT License
+MIT
 
-## 作者
+## Environment
 
-[ogawa3427](https://github.com/ogawa3427) 
+The build tool also defines a variable named `process.env.NODE_ENV` in your scripts. 
+
+## Docs
+
+* [webextension-toolbox](https://github.com/HaNdTriX/webextension-toolbox)
+
+
+金沢大学のLMS(講義サポートサービス)での各講義ごとのリンクを保持して一覧ページを作成する拡張機能です。
+機能は3つ、
+1 リンクを公式の見づらいサイトから一覧から取得
+2 公式のトップページにリンクを追加
+3 リンク先でその保存した一覧を表示
+この過程でID/PWや履修講義情報を外部に送信しません。
+
+This is an extension that keeps links for each lecture in Kanazawa University's LMS (Lecture Support Service) and creates a list page.
+It has three functions:
+1. Get links from the official, hard-to-see site.
+2. Add a link to the official top page.
+3. Display the saved list at the link destination.
+In this process, ID/PW and course registration information are not sent externally.

@@ -1,7 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "URL-Specific DOM Tweaker",
+  "name": "Good Bye LMS Page",
   "version": "0.0.1",
+  "default_locale": "ja",
   "permissions": [
     "scripting",
     "storage",
@@ -38,6 +39,17 @@
     "https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/*",
     "https://ogawa3427.github.io/goodByeLMSPage/"
   ],
-  "background": { "scripts": ["service_worker.js"] },
-  "action": { "default_title": "Tweaker" }
-} 
+  "background": {
+    "service_worker": "scripts/service_worker.js",
+    "type": "module",
+    "scripts": ["scripts/service_worker.js"]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "good-bye-lms-page@ogawa3427.net"
+    }
+  },
+  "action": {
+    "default_title": "Tweaker"
+  }
+}
