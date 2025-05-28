@@ -1,0 +1,41 @@
+# .github/workflows/deploy-pages.yml
+name: Deploy /pages to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]          # デフォルトブランチへの push で実行
+  workflow_dispatch:            # 手動実行も可
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # （任意）タグや履歴が必要なら
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload /pages directory as artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./pages         # ★ ここだけ変更（公開したいディレクトリを指定）
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
