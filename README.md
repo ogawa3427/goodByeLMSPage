@@ -2,37 +2,42 @@
 
 アカンサスポータルのトップからLMSへのリンクがなくなる気がしたので復活させるためのChrome拡張機能です。
 
+## 開発の経緯
+
+2025年5月27日の夕方、製作者が自宅で寝ていたところ、空飛ぶスパゲッティモンスターが夢枕に立って（浮かんで？）、「アカンサスポータルのトップ画面にあるLMSコース一覧へのリンクおよびリンク先ページが、学術メディア創成センターの偉い人マンによって削除されようとしている、これはアカンサスポータル軽量化のため」と告げました。製作者はこのお告げの通りならば金沢大学の学生は大いに苦しむことを予期し、ノアの方舟の如くこの拡張機能を作ったのであります。
+
 ## 機能
 
-- アカンサスのLMSリンクを直接開けるようにパッチ
-- eduwebの時間割から授業情報を取得
-- 授業情報をテーブル形式で表示
+- アカンサスのLMSリンクからアプリを直接開けるようにパッチ
+- 学務情報サービスの時間割からLMSリンクを取得
+- LMSリンクをテーブル形式で表示
 
 ## インストール方法
 
-1. このリポジトリをクローン
-```bash
-git clone https://github.com/ogawa3427/goodByeLMSPage.git
-```
+1. [リリース](https://github.com/ogawa3427/goodByeLMSPage/releases)から使ってるブラウザの方のパッケージをダウンロード  
+(そのうち公式ストアから入れられるようになると思う)
 
-2. Chrome拡張機能の管理ページを開く
-   - Chromeのアドレスバーに `chrome://extensions/` と入力
-   - 右上の「デベロッパーモード」をオン
+2. Chrome の場合  
+[これ](https://qiita.com/Nozomuts/items/fc1d4f8fc995d830817d#:~:text=%E3%81%A7%E3%81%99%EF%BC%81%0A%E3%82%81%E3%81%A3%E3%81%A1%E3%82%83%E7%B0%A1%E5%8D%98-,%E5%8B%95%E4%BD%9C%E7%A2%BA%E8%AA%8D,-chrome%3A//extensions%20%E3%81%AB)参考にして開発者モードonにしてさっきDLしたパッケージを選択
 
-3. 「パッケージ化されていない拡張機能を読み込む」をクリック
-   - `goodByeLMSPage/app` ディレクトリを選択
+3. Firefoxの場合
+[about:debugging#/runtime/this-firefox]の「一時的なアドオンを読み込む」からさっきDLしたパッケージを入れて有効化
 
-## 使い方
-
-1. eduwebの時間割ページにアクセス
+4. 学務情報サービスの[履修時間割ページ](https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/Regist/RegistList.aspx)にアクセス
    - データ取得の確認ダイアログが表示されたら「OK」をクリック
    - 授業情報が自動的に取得・保存されます
+   - 進捗はF12->Consoleで見られます
+   - はじめに一回やればあとはOK
 
-2. アカンサスのLMSページにアクセス
-   - LMSリンクが自動的にパッチされ、直接開けるようになります
+5. アカンサスのトップページにアクセス
+   - LMSリンクが自動的にパッチされ、飛び先が変わって直接開けるようになります
 
-3. GitHub Pagesのページにアクセス
-   - 保存された授業情報がテーブル形式で表示されます
+![これが](./maji.png)
+これが
+![こうなってればいい](./nise.png)
+こうなってればいい
+
+6. あとはよしなに
 
 ## 注意事項
 
@@ -60,14 +65,12 @@ npm run build chrome
 ## ライセンス
 
 MIT
-
-## Environment
-
-The build tool also defines a variable named `process.env.NODE_ENV` in your scripts. 
+No Warranty!!! 無保証！！！
 
 ## Docs
 
 * [webextension-toolbox](https://github.com/HaNdTriX/webextension-toolbox)
+* [Deepwiki](https://deepwiki.com/ogawa3427/goodByeLMSPage)
 
 
 金沢大学のLMS(講義サポートサービス)での各講義ごとのリンクを保持して一覧ページを作成する拡張機能です。
