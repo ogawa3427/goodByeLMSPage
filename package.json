@@ -1,6 +1,6 @@
 {
   "name": "goodByeLMSPage",
-  "version": "v0.1.1",
+  "version": "v0.1.2",
   "description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
   "scripts": {
     "dev": "NODE_OPTIONS=--openssl-legacy-provider webextension-toolbox dev",
