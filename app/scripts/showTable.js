@@ -69,7 +69,11 @@ chrome.storage.local.get(['courseData'], (result) => {
 
     // 科目名
     const tdSubject = document.createElement('td');
-    tdSubject.textContent = course.subject;
+    const subjectLink = document.createElement('a');
+    subjectLink.href = course.lmsLink;
+    subjectLink.textContent = course.subject;
+    subjectLink.target = '_blank';
+    tdSubject.appendChild(subjectLink);
     tdSubject.style.border = '1px solid #ddd';
     tdSubject.style.padding = '8px';
     row.appendChild(tdSubject);

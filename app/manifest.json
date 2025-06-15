@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Good Bye LMS Page",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "default_locale": "ja",
   "permissions": [
     "scripting",
@@ -14,14 +14,6 @@
         "https://acanthus.cis.kanazawa-u.ac.jp/base/top/*"
       ],
       "js": ["scripts/inject.js"],
-      "run_at": "document_idle",
-      "all_frames": true
-    },
-    {
-      "matches": [
-        "https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/*"
-      ],
-      "js": ["scripts/makeTable.js"],
       "run_at": "document_idle",
       "all_frames": true
     },
@@ -40,9 +32,8 @@
     "https://ogawa3427.github.io/goodByeLMSPage/"
   ],
   "background": {
-    "service_worker": "scripts/service_worker.js",
-    "type": "module",
-    "scripts": ["scripts/service_worker.js"]
+    "scripts": ["scripts/service_worker.js"],
+    "type": "module"
   },
   "browser_specific_settings": {
     "gecko": {
@@ -50,6 +41,13 @@
     }
   },
   "action": {
-    "default_title": "Tweaker"
+    "default_title": "Good Bye LMS Page メニュー",
+    "default_popup": "pages/popup.html",
+    "default_icon": {
+      "16": "images/icon-16.png",
+      "19": "images/icon-19.png",
+      "38": "images/icon-38.png",
+      "128": "images/icon-128.png"
+    }
   }
 }

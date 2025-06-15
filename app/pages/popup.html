@@ -2,12 +2,36 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Popup</title>
+  <title>Good Bye LMS Page メニュー</title>
   <link rel="stylesheet" type="text/css" href="../styles/popup.css">
 </head>
 <body>
+  <div class="popup-container">
+    <div class="header">
+      <h2>Good Bye LMS Page</h2>
+      <p class="version">v0.1.5</p>
+    </div>
+    
+    <div class="menu-section">
+      <ul class="menu-list">
+        <li>このボタンは学務情報システムの時間割ページでのみ利用できます。<br>以下のURLにアクセスしてから再度お試しください：<br><a href="https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/Regist/RegistList.aspx" target="_blank">https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/Regist/RegistList.aspx</a></li>
 
-  <h1>Popup</h1>
+        <li><button id="btn-make-table" class="make-table">時間割表を作成</button></li>
+        <li><button id="btn-clear-data" class="make-table">データ全消去</button></li>
+      </ul>
+    </div>
+    
+    <div class="saved-data">
+      <h3>取得済みデータ</h3>
+      <ul class="menu-list">
+        <li>空です。<a href="https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/Regist/RegistList.aspx" target="_blank">https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/Regist/RegistList.aspx</a>にアクセスしてデータを入れてください</li>
+      </ul>
+    </div>
+    
+    <div class="footer">
+      <a href="https://github.com/ogawa3427/goodByeLMSPage" class="link">GitHub</a>
+    </div>
+  </div>
 
   <script src="../scripts/popup.js"></script>
 </body>

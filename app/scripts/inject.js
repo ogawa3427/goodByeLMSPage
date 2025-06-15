@@ -1,5 +1,5 @@
 // アカンサスのページに注入されるスクリプト
-console.log('アカンサスのトップページに注入されました');
+console.log('アカンサスのトップページに注入されました！！！！');
 
 // ここに必要なDOM操作を追加
 // document.addEventListener('DOMContentLoaded', () => {
@@ -166,7 +166,7 @@ console.log('アカンサスのトップページに注入されました');
 
       console.log('★ LMSリンクのパッチ適用完了:', link.href);
     });
-  };
+  
 
   // // 1) ページがすでに読み込み完了してるなら即実行
   // if (document.readyState === 'complete') {
@@ -179,6 +179,48 @@ console.log('アカンサスのトップページに注入されました');
   //     patchLmsLink();
   //   });
   // }
+
+
+
+    const historyModule = document.getElementsByClassName('home-history-module')[0];
+    if (!historyModule) {
+      console.log('最近使った機能のモジュールが見つかりません');
+      return;
+    }
+
+    const historyList = historyModule.querySelector('.home-history-module__result-inner');
+    if (!historyList) {
+      console.log('最近使った機能のリストが見つかりません');
+      return;
+    }
+
+    const fakeLmsLink = document.createElement('li');
+    const link = document.createElement('a');
+    const div = document.createElement('div');
+    div.style.backgroundColor = '#ffff00';
+    div.style.color = '#000000';
+    div.style.padding = '5px';
+    // div.style.display = 'inline-block';
+    
+    link.href = 'https://ogawa3427.github.io/goodByeLMSPage/';
+    // link.target = '_blank';
+    link.textContent = '偽LMS';
+    link.title = '偽LMSへのリンクです。クリックすると新しいページが開きます。';
+    link.style.fontWeight = 'bold';
+    // 文字をでかく
+    link.style.fontSize = '4em';
+    // 文字を太く
+    link.style.fontWeight = 'bold';
+    // 文字を赤く
+    link.style.color = '#ff0000';
+    
+    div.appendChild(link);
+    
+    fakeLmsLink.appendChild(div);
+    historyList.insertBefore(fakeLmsLink, historyList.firstChild);
+    
+    console.log('最近使った機能に偽LMSリンクを追加しました');
+  };
 
   patchLmsLink();
 })(); 

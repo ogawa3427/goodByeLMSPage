@@ -27,9 +27,12 @@ sed -i '' "s/\"version\": \".*\"/\"version\": \"$NEW_VERSION\"/" package.json
 # manifest.jsonの更新
 sed -i '' "s/\"version\": \".*\"/\"version\": \"$NEW_VERSION\"/" app/manifest.json
 
+# popup.htmlの更新
+sed -i '' "s/<p class=\"version\">v.*<\/p>/<p class=\"version\">v$NEW_VERSION<\/p>/" app/pages/popup.html
+
 # 変更をコミット
 git add -A
-git add package.json app/manifest.json
+git add package.json app/manifest.json app/pages/popup.html
 git commit -m "$COMMIT_MESSAGE"
 
 # タグの作成とプッシュ
