@@ -21,20 +21,34 @@ document.addEventListener('DOMContentLoaded', function() {
       
       if (chrome.runtime.lastError) {
         console.error('ストレージからの読み込みに失敗:', chrome.runtime.lastError);
-        savedDataDiv.innerHTML = '<li>データの読み込みに失敗しました</li>';
+        const errorItem = document.createElement('li');
+        errorItem.textContent = 'データの読み込みに失敗しました';
+        savedDataDiv.appendChild(errorItem);
         return;
       }
 
       const data = result.courseData;
       if (!data || !data.courseData || Object.keys(data.courseData).length === 0) {
-        savedDataDiv.innerHTML = '<li>空です。<a href="https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/Regist/RegistList.aspx" target="_blank">https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/Regist/RegistList.aspx</a>にアクセスしてデータを入れてください</li>';
+        const emptyItem = document.createElement('li');
+        const link = document.createElement('a');
+        link.href = 'https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/Regist/RegistList.aspx';
+        link.target = '_blank';
+        link.textContent = 'https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/Regist/RegistList.aspx';
+        emptyItem.textContent = '空です。';
+        emptyItem.appendChild(link);
+        emptyItem.appendChild(document.createTextNode('にアクセスしてデータを入れてください'));
+        savedDataDiv.appendChild(emptyItem);
         return;
       }
 
       // データが存在する場合
       const courseData = data.courseData;
       const timestamp = new Date(data.timestamp).toLocaleString('ja-JP');
-      let html = `<li style="color: #666; font-size: 12px;">取得日時: ${timestamp}</li>`;
+      const timestampItem = document.createElement('li');
+      timestampItem.style.color = '#666';
+      timestampItem.style.fontSize = '12px';
+      timestampItem.textContent = `取得日時: ${timestamp}`;
+      savedDataDiv.appendChild(timestampItem);
       
       const dayNames = {
         'Mon': '月',
@@ -67,18 +81,23 @@ document.addEventListener('DOMContentLoaded', function() {
         const period = key.substring(3);
         const dayJp = dayNames[day] || day;
         
-        // 科目名をリンクにする（LMSリンクがあれば）
-        let subjectDisplay;
+        const listItem = document.createElement('li');
+        listItem.textContent = `${dayJp}${period}: `;
+        
         if (course.lmsLink) {
-          subjectDisplay = `<a href="${course.lmsLink}" target="_blank" style="color: #0066cc; text-decoration: underline;">${course.subject}</a>`;
+          const link = document.createElement('a');
+          link.href = course.lmsLink;
+          link.target = '_blank';
+          link.style.color = '#0066cc';
+          link.style.textDecoration = 'underline';
+          link.textContent = course.subject;
+          listItem.appendChild(link);
         } else {
-          subjectDisplay = course.subject;
+          listItem.textContent += course.subject;
         }
         
-        html += `<li>${dayJp}${period}: ${subjectDisplay}</li>`;
+        savedDataDiv.appendChild(listItem);
       });
-      
-      savedDataDiv.innerHTML = html;
     });
   };
 
