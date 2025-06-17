@@ -1,10 +1,12 @@
 {
   "name": "goodByeLMSPage",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
   "scripts": {
     "dev": "NODE_OPTIONS=--openssl-legacy-provider webextension-toolbox dev",
     "build": "node scripts/build.js",
+    "build:chrome": "node scripts/build.js chrome",
+    "build:firefox": "node scripts/build.js firefox",
     "debug": "NODE_OPTIONS=--openssl-legacy-provider webextension-toolbox dev firefox",
     "debug:chrome": "NODE_OPTIONS=--openssl-legacy-provider webextension-toolbox dev chrome",
     "debug:edge": "NODE_OPTIONS=--openssl-legacy-provider webextension-toolbox dev edge"
