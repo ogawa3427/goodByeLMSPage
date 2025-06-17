@@ -2,15 +2,26 @@
 console.log('GitHub Pagesのページに注入されました');
 let isShownTable = false;
 
+// ブラウザ互換性のための統一されたAPI取得
+const browserAPI = (() => {
+  if (typeof browser !== 'undefined') {
+    return browser; // Firefox, Safari
+  }
+  if (typeof chrome !== 'undefined') {
+    return chrome; // Chrome
+  }
+  throw new Error('Browser API not found');
+})();
+
 // クソみたいなLMSのデータを読み込む
-chrome.storage.local.get(['courseData'], (result) => {
+browserAPI.storage.local.get(['courseData'], (result) => {
   if (isShownTable) {
     console.log('すでにテーブルが表示されています');
     return;
   }
   isShownTable = true;
-  if (chrome.runtime.lastError) {
-    console.error('データの読み込みに失敗:', chrome.runtime.lastError);
+  if (browserAPI.runtime.lastError) {
+    console.error('データの読み込みに失敗:', browserAPI.runtime.lastError);
     return;
   }
 
