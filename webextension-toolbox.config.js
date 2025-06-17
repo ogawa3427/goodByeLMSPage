@@ -1,6 +1,6 @@
 module.exports = {
-  webpack: {
-    devtool: 'source-map',
+  "webpackConfig": {
+    "devtool": "source-map"
   },
-  vendor: ['chrome', 'firefox', 'edge']
-}; 
+  "vendor": "firefox"
+};
