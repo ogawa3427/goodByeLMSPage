@@ -167,8 +167,9 @@ document.addEventListener('DOMContentLoaded', function() {
       })();
     `;
 
-    // Firefox専用処理
+    // Firefox専用処理（文字列コード実行）
     if (isFirefox && browserAPI.tabs && browserAPI.tabs.executeScript) {
+      /* FIREFOX_EVAL_START */
       return new Promise((resolve, reject) => {
         browserAPI.tabs.executeScript(tabId, { code: extractScriptForFirefox }, (result) => {
           if (browserAPI.runtime.lastError) {
@@ -178,6 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         });
       });
+      /* FIREFOX_EVAL_END */
     } 
     // Chrome用処理（関数オブジェクトを使用してCSP回避）
     else if (browserAPI.scripting && browserAPI.scripting.executeScript) {
@@ -188,6 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } 
     // Fallback（Firefox以外でtabs.executeScriptが使える場合）
     else if (browserAPI.tabs && browserAPI.tabs.executeScript) {
+      /* FIREFOX_FALLBACK_START */
       return new Promise((resolve, reject) => {
         browserAPI.tabs.executeScript(tabId, { code: extractScriptForFirefox }, (result) => {
           if (browserAPI.runtime.lastError) {
@@ -197,6 +200,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         });
       });
+      /* FIREFOX_FALLBACK_END */
     } 
     else {
       return Promise.reject(new Error('No compatible script execution API found'));

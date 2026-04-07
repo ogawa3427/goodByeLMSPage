@@ -46,10 +46,10 @@ browserAPI.tabs.onUpdated.addListener((tabId, info, tab) => {
     executeScriptCompatible(tabId, ['scripts/inject.js']);
   }
 
-  // 金沢大学のポータル
-  else if (url.hostname === 'eduweb.sta.kanazawa-u.ac.jp') {
-    executeScriptCompatible(tabId, ['scripts/makeTable.js']);
-  }
+  // // 金沢大学のポータル
+  // else if (url.hostname === 'eduweb.sta.kanazawa-u.ac.jp') {
+  //   executeScriptCompatible(tabId, ['scripts/makeTable.js']);
+  // }
 
   // 設定ページ
   else if (url.hostname === 'ogawa3427.github.io') {

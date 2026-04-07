@@ -1,6 +1,9 @@
 module.exports = {
   "webpackConfig": {
-    "devtool": "source-map"
+    "devtool": "hidden-source-map",
+    "optimization": {
+      "minimize": true
+    }
   },
   "vendor": "firefox"
 };
