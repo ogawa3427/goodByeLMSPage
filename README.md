@@ -51,15 +51,12 @@
 ```bash
 # 依存関係のインストール
 npm install
-
-# 開発モードで実行
-npm run dev chrome
 ```
 
 ## ビルド 👋😁 
 
 ```bash
-npm run build
+npx wxt build        
 ```
 
 ## ライセンス 👋😁 

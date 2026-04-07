@@ -31,10 +31,13 @@ async function checkForUpdate() {
 }
 
 export default defineBackground(() => {
-  chrome.runtime.onInstalled.addListener(() => checkForUpdate());
+  chrome.runtime.onInstalled.addListener(() => {
+    checkForUpdate();
+    // アラームはonInstalled内で作成（サービスワーカー起動直後はalarms APIが未初期化の場合がある）
+    chrome.alarms?.create('updateCheck', { periodInMinutes: 24 * 60 });
+  });
   chrome.runtime.onStartup.addListener(() => checkForUpdate());
-  chrome.alarms.create('updateCheck', { periodInMinutes: 24 * 60 });
-  chrome.alarms.onAlarm.addListener((alarm) => {
+  chrome.alarms?.onAlarm.addListener((alarm) => {
     if (alarm.name === 'updateCheck') checkForUpdate();
   });
 
@@ -51,6 +54,11 @@ export default defineBackground(() => {
       if (tabId == null) return;
       chrome.action.setBadgeText({ text: '★', tabId });
       chrome.action.setBadgeBackgroundColor({ color: '#ffcc00', tabId });
+    }
+
+    if (msg.type === 'CHECK_UPDATE') {
+      checkForUpdate().then(() => sendResponse({ done: true }));
+      return true;
     }
 
     if (msg.type === 'FETCH_URL') {

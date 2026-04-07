@@ -17,6 +17,36 @@ interface LectureEntry {
   lmsUrl: string;
 }
 
+interface QuarterData {
+  year: number;
+  quarter: 1 | 2 | 3 | 4;
+  entries: LectureEntry[];
+  registeredAt: number;
+}
+
+// 3/28以降は新年度扱い
+function getAcademicYear(date: Date): number {
+  const m = date.getMonth() + 1;
+  const d = date.getDate();
+  const y = date.getFullYear();
+  if (m < 3 || (m === 3 && d < 28)) return y - 1;
+  return y;
+}
+
+function getQuarterFromDate(date: Date): 1 | 2 | 3 | 4 {
+  const m = date.getMonth() + 1;
+  if (m >= 4 && m <= 6)  return 1;
+  if (m >= 7 && m <= 9)  return 2;
+  if (m >= 10 && m <= 12) return 3;
+  return 4;
+}
+
+// ページ上のQドロップダウン value → quarter番号
+function mapQSelectValue(val: string): 1 | 2 | 3 | 4 {
+  const map: Record<string, 1 | 2 | 3 | 4> = { '11': 1, '12': 2, '21': 3, '22': 4 };
+  return map[val] ?? 1;
+}
+
 const DAYS = [
   { key: 'Mon', label: '月' },
   { key: 'Tue', label: '火' },
@@ -78,44 +108,47 @@ export default defineContentScript({
     // ----- notice div への登録済み講義一覧注入 -----
 
     async function injectStoredLectures() {
-      const result = await browser.storage.local.get(['lectureData']);
-      const entries: LectureEntry[] = result.lectureData ?? [];
+      const result = await browser.storage.local.get(['allLectureData', 'lectureData']);
+      let allData: QuarterData[] = result.allLectureData ?? [];
+
+      // 旧データの後方互換対応
+      if (allData.length === 0 && result.lectureData?.length > 0) {
+        const now = new Date();
+        allData = [{
+          year: getAcademicYear(now),
+          quarter: getQuarterFromDate(now),
+          entries: result.lectureData,
+          registeredAt: Date.now(),
+        }];
+      }
 
       const noticeDivs = Array.from(document.getElementsByClassName(NOTICE_CLASS)) as HTMLElement[];
       if (noticeDivs.length === 0) return;
 
-      const panel = buildLecturePanel(entries);
+      const now = new Date();
+      const currentYear = getAcademicYear(now);
+      const currentQ = getQuarterFromDate(now);
 
       for (const div of noticeDivs) {
-        const clone = panel.cloneNode(true) as HTMLElement;
-        div.parentNode?.insertBefore(clone, div);
+        const panel = buildLecturePanel(allData, currentYear, currentQ);
+        div.parentNode?.insertBefore(panel, div);
       }
     }
 
-    function buildLecturePanel(entries: LectureEntry[]): HTMLElement {
-      const wrap = document.createElement('div');
-      wrap.className = 'lms-course-list-lms-notice-panel';
-      wrap.id = 'gblms-stored-panel';
-      wrap.style.cssText = 'padding: 6px 20px 10px; box-sizing: border-box;';
+    // ----- 講義テーブル本体（エントリ一覧） -----
 
-      const header = document.createElement('div');
-      header.className = 'lms-course-list-lms-panel-caption';
-      header.innerHTML = `<table style="width:100%; max-width:900px; margin:0 auto;"><tbody><tr><td style="font-weight:bold; color:navy; font-size:1.05em; padding:10px 8px 6px;">Good Bye LMS Page &nbsp;—&nbsp; 登録済み講義</td></tr></tbody></table>`;
-      wrap.appendChild(header);
-
+    function buildEntriesTable(entries: LectureEntry[]): HTMLElement {
       if (entries.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'lms-course-list-lms-panel';
         empty.innerHTML = `<table style="width:100%"><tbody><tr><td style="padding:8px 10px; color:#888; font-size:0.85em;">データが登録されていません</td></tr></tbody></table>`;
-        wrap.appendChild(empty);
-        return wrap;
+        return empty;
       }
 
       const DAY_ORDER = ['月', '火', '水', '木', '金', '土'];
       const sorted = [...entries].sort((a, b) => {
         const da = DAY_ORDER.indexOf(a.day);
         const db = DAY_ORDER.indexOf(b.day);
-        // 曜日が不明（集中等）は末尾
         if (da !== db) return (da === -1 ? 99 : da) - (db === -1 ? 99 : db);
         return a.period - b.period;
       });
@@ -128,12 +161,10 @@ export default defineContentScript({
       for (const e of sorted) {
         const tr = document.createElement('tr');
 
-        // 曜日・時限
         const tdPeriod = document.createElement('td');
         tdPeriod.style.cssText = 'width:8%; white-space:nowrap; padding:14px 8px; font-size:1.0em;';
         tdPeriod.textContent = `${e.day}${e.period}限`;
 
-        // シラバスバッジ
         const tdSyllabus = document.createElement('td');
         tdSyllabus.style.cssText = 'width:4%; padding:14px 6px; text-align:center; vertical-align:middle;';
         if (e.syllabusUrl) {
@@ -159,7 +190,6 @@ export default defineContentScript({
           tdSyllabus.appendChild(sa);
         }
 
-        // 科目名（LMSリンクあれば <a>）
         const tdSubject = document.createElement('td');
         tdSubject.style.cssText = 'width:41%; padding:14px 8px; font-size:1.05em;';
         if (e.lmsUrl) {
@@ -174,12 +204,10 @@ export default defineContentScript({
           tdSubject.style.color = '#888';
         }
 
-        // 教員名
         const tdTeacher = document.createElement('td');
         tdTeacher.style.cssText = 'width:30%; padding:14px 8px; font-size:0.95em; color:#555;';
         tdTeacher.textContent = e.teacher;
 
-        // 科目区分・単位
         const tdMeta = document.createElement('td');
         tdMeta.style.cssText = 'width:17%; padding:14px 8px; font-size:0.90em; color:#888; white-space:nowrap;';
         tdMeta.textContent = `${e.sbjDiv} ${e.credit}`.trim();
@@ -193,7 +221,79 @@ export default defineContentScript({
       }
 
       table.appendChild(tbody);
-      wrap.appendChild(table);
+      return table;
+    }
+
+    // ----- パネル全体（セレクタ + テーブル） -----
+
+    function buildLecturePanel(allData: QuarterData[], defaultYear: number, defaultQ: 1 | 2 | 3 | 4): HTMLElement {
+      const wrap = document.createElement('div');
+      wrap.className = 'lms-course-list-lms-notice-panel';
+      wrap.id = 'gblms-stored-panel';
+      wrap.style.cssText = 'padding: 6px 20px 10px; box-sizing: border-box;';
+
+      const header = document.createElement('div');
+      header.className = 'lms-course-list-lms-panel-caption';
+      header.innerHTML = `<table style="width:100%; max-width:900px; margin:0 auto;"><tbody><tr><td style="font-weight:bold; color:navy; font-size:1.05em; padding:10px 8px 4px;">Good Bye LMS Page &nbsp;—&nbsp; 登録済み講義</td></tr></tbody></table>`;
+      wrap.appendChild(header);
+
+      // 年度・Qセレクタ行
+      const selectorRow = document.createElement('div');
+      selectorRow.style.cssText = 'max-width:900px; margin:0 auto 6px; display:flex; align-items:center; gap:8px; padding:2px 8px 6px; border-bottom:1px solid #ddd;';
+
+      const years = [...new Set(allData.map(d => d.year))].sort((a, b) => b - a);
+      if (years.length === 0) years.push(defaultYear);
+
+      const yearSel = document.createElement('select');
+      yearSel.style.cssText = 'font-size:0.9em; padding:2px 6px; border:1px solid #ccc; border-radius:3px;';
+      for (const y of years) {
+        const opt = document.createElement('option');
+        opt.value = String(y);
+        opt.textContent = `${y}年度`;
+        opt.selected = y === defaultYear;
+        yearSel.appendChild(opt);
+      }
+
+      const qSel = document.createElement('select');
+      qSel.style.cssText = 'font-size:0.9em; padding:2px 6px; border:1px solid #ccc; border-radius:3px;';
+      for (let q = 1; q <= 4; q++) {
+        const opt = document.createElement('option');
+        opt.value = String(q);
+        opt.textContent = `Q${q}`;
+        opt.selected = q === defaultQ;
+        qSel.appendChild(opt);
+      }
+
+      const registeredLabel = document.createElement('span');
+      registeredLabel.style.cssText = 'font-size:0.8em; color:#999; margin-left:4px;';
+
+      selectorRow.appendChild(yearSel);
+      selectorRow.appendChild(qSel);
+      selectorRow.appendChild(registeredLabel);
+      wrap.appendChild(selectorRow);
+
+      const tableContainer = document.createElement('div');
+      wrap.appendChild(tableContainer);
+
+      function renderTable() {
+        const year = parseInt(yearSel.value);
+        const q = parseInt(qSel.value) as 1 | 2 | 3 | 4;
+        const periodData = allData.find(d => d.year === year && d.quarter === q);
+        tableContainer.innerHTML = '';
+        tableContainer.appendChild(buildEntriesTable(periodData?.entries ?? []));
+
+        if (periodData) {
+          const d = new Date(periodData.registeredAt);
+          registeredLabel.textContent = `登録: ${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+        } else {
+          registeredLabel.textContent = '';
+        }
+      }
+
+      renderTable();
+      yearSel.addEventListener('change', renderTable);
+      qSel.addEventListener('change', renderTable);
+
       return wrap;
     }
 
@@ -298,6 +398,12 @@ export default defineContentScript({
       const targetId = 'ctl00_phContents_rrMain_ttTable_tblLecture';
       console.group('[GoodByeLMS] 登録処理開始');
 
+      // ページ上のQドロップダウンを読む
+      const qSelectEl = document.getElementById('ctl00_phContents_ucRegistSearchList_ddlTerm') as HTMLSelectElement | null;
+      const quarter = mapQSelectValue(qSelectEl?.value ?? '');
+      const year = getAcademicYear(new Date());
+      console.log(`[GoodByeLMS] 対象: ${year}年度 Q${quarter}`);
+
       // Step 1: テーブル取得
       console.log('[GoodByeLMS] Step1: テーブルをパース中...');
       sendProgress(1, 'running');
@@ -325,10 +431,20 @@ export default defineContentScript({
       console.log(`[GoodByeLMS] Step2: 完了 (成功 ${lmsFound}件 / エラー ${errorCount}件)`);
       sendProgress(2, 'done', `${entries.length} / ${entries.length}`);
 
-      // Step 3: データ保存
+      // Step 3: データ保存（allLectureData に年度・Q単位で蓄積）
       console.log('[GoodByeLMS] Step3: storage.local に保存中...');
       sendProgress(3, 'running');
-      await browser.storage.local.set({ lectureData: entries });
+
+      const stored = await browser.storage.local.get('allLectureData');
+      const allData: QuarterData[] = stored.allLectureData ?? [];
+      const idx = allData.findIndex(d => d.year === year && d.quarter === quarter);
+      const qData: QuarterData = { year, quarter, entries, registeredAt: Date.now() };
+      if (idx >= 0) {
+        allData[idx] = qData;
+      } else {
+        allData.push(qData);
+      }
+      await browser.storage.local.set({ allLectureData: allData });
       sendProgress(3, 'done');
 
       console.log('[GoodByeLMS] 保存完了 最終データ:');
