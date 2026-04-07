@@ -6,6 +6,7 @@
 ## 開発の経緯 👨👋😁 👋😁 👋😁 👋😁 👋😁 
 
 2025年5月27日の夕方、製作者が自宅で寝ていたところ、空飛ぶスパゲッティモンスターが夢枕に立って（浮かんで？）、「アカンサスポータルのトップ画面にあるLMSコース一覧へのリンクおよびリンク先ページが、学術メディア創成センターの偉い人マンによって削除されようとしている、これはアカンサスポータル軽量化のため」と告げました。製作者はこのお告げの通りならば金沢大学の学生は大いに苦しむことを予期し、ノアの方舟の如くこの拡張機能を作ったのであります。👋😁 👋😁 👋😁 👋😁 👋😁 
+[2026年春 追記] 当局は本当にLMSページを大改悪しました‼️当局の横暴による喪失の日を、我々自身の手によって我々の精神的勝利の祝祭の日へと変えるのです‼️
 
 ## 機能 👋😁 
 
@@ -15,28 +16,27 @@
 
 ## インストール方法 👋😁 
 
-1. [リリース](https://github.com/ogawa3427/goodByeLMSPage/releases)から使ってるブラウザの方のパッケージをダウンロード  
-([公式ストア](https://addons.mozilla.org/en-GB/firefox/addon/good-bye-lms-page/)から入れられるようになってるけど、審査の関係で最新版とは限らない)
+1. [リリース](https://github.com/ogawa3427/goodByeLMSPage/releases)から使ってるブラウザの方のパッケージをダウンロードして解凍する、次のステップではそのフォルダを指定します  
+(そのうち公式ストアから入れられるようになると思う)
 
 2. Chrome の場合  
 [これ](https://qiita.com/Nozomuts/items/fc1d4f8fc995d830817d#:~:text=%E3%81%A7%E3%81%99%EF%BC%81%0A%E3%82%81%E3%81%A3%E3%81%A1%E3%82%83%E7%B0%A1%E5%8D%98-,%E5%8B%95%E4%BD%9C%E7%A2%BA%E8%AA%8D,-chrome%3A//extensions%20%E3%81%AB)参考にして開発者モードonにしてさっきDLしたパッケージを選択
 
-3. Firefoxの場合
-[about:debugging#/runtime/this-firefox]の「一時的なアドオンを読み込む」からさっきDLしたパッケージを入れて有効化
+3. Firefoxは一旦対応をストップしています
+<!-- 3. Firefoxの場合
+[about:debugging#/runtime/this-firefox]の「一時的なアドオンを読み込む」からさっきDLしたパッケージを入れて有効化 -->
 
-4. 学務情報サービスの[履修時間割ページ](https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/Regist/RegistList.aspx)にアクセス
-   - データ取得の確認ダイアログが表示されたら「OK」をクリック
+4. 学務情報サービスの[履修時間割ページ](https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/Regist/RegistList.aspx)にアクセス(リンク先で「履修時間割表」を開く)
+   - データ取得の確認ダイアログが表示されるので「YES」をクリック
    - 授業情報が自動的に取得・保存されます
    - 進捗はF12->Consoleで見られます
    - はじめに一回やればあとはOK
 
 5. アカンサスのトップページにアクセス
-   - LMSリンクが自動的にパッチされ、飛び先が変わって直接開けるようになります
+   - LMSリンクが自動的にパッチされ、飛び先がいじられて直接開けるようになります
 
 ![これが](./maji.png)
-これが
-![こうなってればいい](./nise.png)
-こうなってればいい
+これ
 
 6. あとはよしなに
 
@@ -51,16 +51,12 @@
 ```bash
 # 依存関係のインストール
 npm install
-
-# 開発モードで実行
-npm run dev chrome
 ```
 
 ## ビルド 👋😁 
 
 ```bash
-# Chrome用にビルド
-npm run build chrome
+npx wxt build        
 ```
 
 ## ライセンス 👋😁 

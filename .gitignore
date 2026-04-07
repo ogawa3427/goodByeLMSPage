@@ -1,3 +1,8 @@
 node_modules/
 dist/
 packages/
+.output/
+.wxt/
+docs/ref_course-list.css
+docs/ref_page.css
+docs/ref_page2.css
