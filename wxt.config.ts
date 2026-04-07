@@ -5,6 +5,6 @@ export default defineConfig({
     name: 'Good Bye LMS Page',
     version: '0.2.5',
     default_locale: 'ja',
-    permissions: ['storage', 'tabs'],
+    permissions: ['storage', 'tabs', 'alarms'],
   },
 });

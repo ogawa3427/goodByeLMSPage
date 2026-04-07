@@ -131,6 +131,28 @@
       #title-section img { width: 32px; height: 32px; }
 
       #title-section h1 { font-size: 15px; font-weight: bold; color: #111; }
+
+      /* アップデートバナー */
+      #update-section {
+        padding: 9px 16px;
+        background: #eaf4ff;
+        border-top: 1px solid #b3d4f5;
+        font-size: 12px;
+        color: #1a5fa8;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      #update-section .update-label { flex: 1; }
+
+      #update-section a {
+        color: #1a5fa8;
+        font-weight: bold;
+        text-decoration: underline;
+        cursor: pointer;
+        white-space: nowrap;
+      }
     </style>
   </head>
   <body>
@@ -168,6 +190,11 @@
     <div id="title-section">
       <img src="/images/icon-38.png" alt="icon" />
       <h1>Good Bye LMS Page</h1>
+    </div>
+
+    <div id="update-section" style="display: none;">
+      <span class="update-label">新しいバージョン <strong id="update-version"></strong> があります</span>
+      <a id="update-link" target="_blank">リリースノートを見る</a>
     </div>
 
     <script type="module" src="./main.ts"></script>

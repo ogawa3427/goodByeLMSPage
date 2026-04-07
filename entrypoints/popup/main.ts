@@ -1,3 +1,22 @@
+// ----- アップデート通知 -----
+
+async function initUpdateBanner() {
+  const result = await chrome.storage.local.get('updateCheck');
+  const updateCheck = result.updateCheck as { hasUpdate: boolean; latestVersion: string; releaseUrl: string } | undefined;
+  if (!updateCheck?.hasUpdate) return;
+
+  const section = document.getElementById('update-section')!;
+  const versionEl = document.getElementById('update-version')!;
+  const linkEl = document.getElementById('update-link')! as HTMLAnchorElement;
+
+  versionEl.textContent = `v${updateCheck.latestVersion}`;
+  linkEl.href = updateCheck.releaseUrl;
+  section.style.display = 'flex';
+
+  // バッジをクリアするのはポップアップを開いた時点で十分
+  chrome.action.setBadgeText({ text: '' });
+}
+
 const registerSection = document.getElementById('register-section')!;
 const progressSection = document.getElementById('progress-section')!;
 const btnYes = document.getElementById('btn-yes')!;
@@ -85,3 +104,4 @@ btnLater.addEventListener('click', () => {
 });
 
 init();
+initUpdateBanner();
