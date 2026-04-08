@@ -164,6 +164,15 @@ function renderVersionStatus(updateCheck: UpdateCheck | undefined) {
     a.target = '_blank';
     a.textContent = `v${updateCheck.latestVersion} があります`;
     statusEl.appendChild(a);
+
+    const hint = document.createElement('div');
+    hint.style.cssText = 'font-size:10px; color:#888; margin-top:4px; line-height:1.6;';
+    hint.innerHTML =
+      '① <a href="' + updateCheck.releaseUrl + '" target="_blank" style="color:#1a6fd4;">zip をDL</a> して解凍<br>' +
+      '② 今のインストールフォルダに上書き<br>' +
+      '③ <a href="chrome://extensions" target="_blank" style="color:#1a6fd4;">chrome://extensions</a> で更新ボタン';
+    statusEl.appendChild(hint);
+
     chrome.action.setBadgeText({ text: 'NEW' });
     chrome.action.setBadgeBackgroundColor({ color: '#e74c3c' });
   } else {
