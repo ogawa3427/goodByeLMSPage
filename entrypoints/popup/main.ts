@@ -170,7 +170,7 @@ function renderVersionStatus(updateCheck: UpdateCheck | undefined) {
     hint.innerHTML =
       '① <a href="' + updateCheck.releaseUrl + '" target="_blank" style="color:#1a6fd4;">zip をDL</a> して解凍<br>' +
       '② 今のインストールフォルダに上書き<br>' +
-      '③ <a href="chrome://extensions" target="_blank" style="color:#1a6fd4;">chrome://extensions</a> で更新ボタン';
+      '③ アドレスバーに <code style="background:#f0f0f0;padding:1px 4px;border-radius:3px;font-size:9px;">chrome://extensions</code> → 更新ボタン';
     statusEl.appendChild(hint);
 
     chrome.action.setBadgeText({ text: 'NEW' });
