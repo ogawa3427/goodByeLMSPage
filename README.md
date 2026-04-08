@@ -20,7 +20,7 @@
 (そのうち公式ストアから入れられるようになると思う)
 
 2. Chrome の場合  
-[これ](https://qiita.com/Nozomuts/items/fc1d4f8fc995d830817d#:~:text=%E3%81%A7%E3%81%99%EF%BC%81%0A%E3%82%81%E3%81%A3%E3%81%A1%E3%82%83%E7%B0%A1%E5%8D%98-,%E5%8B%95%E4%BD%9C%E7%A2%BA%E8%AA%8D,-chrome%3A//extensions%20%E3%81%AB)参考にして開発者モードonにしてさっきDLしたパッケージを選択
+[Chrome:拡張機能を管理](chrome://extensions/)から、画面右上の開発者モードをONにしたら左上の「パッケージ化されていない拡張機能を読み込む」をクリック。さっき解凍したしたフォルダを選択する
 
 3. Firefoxは一旦対応をストップしています
 <!-- 3. Firefoxの場合

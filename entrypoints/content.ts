@@ -1,7 +1,3 @@
-const TABLE_IDS = [
-  'ctl00_phContents_rrMain_ttTable_tblLecture',
-  'ctl00_phContents_ucCourseSchedule_ttTable_tblLecture',
-];
 const NOTICE_CLASS = 'lms-course-list-lms-notice';
 
 interface LectureEntry {
@@ -72,12 +68,9 @@ export default defineContentScript({
 
     function runChecks() {
       if (!tableDetected) {
-        for (const id of TABLE_IDS) {
-          if (document.getElementById(id)) {
-            tableDetected = true;
-            browser.runtime.sendMessage({ type: 'TABLE_DETECTED' });
-            break;
-          }
+        if (document.querySelectorAll('table[id*="tblLecture"]').length > 0) {
+          tableDetected = true;
+          browser.runtime.sendMessage({ type: 'TABLE_DETECTED' });
         }
       }
 
@@ -132,6 +125,11 @@ export default defineContentScript({
       for (const div of noticeDivs) {
         const panel = buildLecturePanel(allData, currentYear, currentQ);
         div.parentNode?.insertBefore(panel, div);
+
+        const authorMsg = document.createElement('div');
+        authorMsg.style.cssText = 'padding: 4px 20px 6px; font-weight: bold; font-size: 1.0em; color: #1a1a1a;';
+        authorMsg.textContent = '👋😁 👋😁 👋😁 👋😁 👋😁 👋😁 👋😁 👋😁 👋😁 👋😁 👋😁 以下は、当局の断末魔の叫びである！👋😁 👋😁 👋😁 👋😁 👋😁 👋😁 👋😁 👋😁 👋😁 👋😁 👋😁 ';
+        div.parentNode?.insertBefore(authorMsg, div);
       }
     }
 
@@ -314,8 +312,8 @@ export default defineContentScript({
 
     // ----- テーブルパース -----
 
-    function parseTable(tableId: string): LectureEntry[] {
-      const prefix = tableId.replace('_tblLecture', '');
+    function parseTable(table: HTMLTableElement): LectureEntry[] {
+      const prefix = table.id.replace('_tblLecture', '');
       const entries: LectureEntry[] = [];
 
       for (const period of PERIODS) {
@@ -392,10 +390,85 @@ export default defineContentScript({
       browser.runtime.sendMessage({ type: 'PROGRESS_UPDATE', step, status, detail }).catch(() => {});
     }
 
+    // ----- テーブル探索 -----
+
+    type TableFindResult =
+      | { ok: true; table: HTMLTableElement }
+      | { ok: false; error: string };
+
+    function findTableByRowCount(rowCount: number): HTMLTableElement[] {
+      const allTables = Array.from(document.querySelectorAll('table')) as HTMLTableElement[];
+      console.log(`[GoodByeLMS] ページ上のテーブル総数: ${allTables.length}`);
+      const filtered = allTables.filter(t => {
+        const tbody = t.querySelector('tbody');
+        return tbody ? tbody.querySelectorAll(':scope > tr').length === rowCount : false;
+      });
+      console.log(`[GoodByeLMS] tbody>tr=${rowCount} のテーブル数: ${filtered.length}`);
+      for (const t of filtered) console.log(t);
+      return filtered;
+    }
+
+    function findLectureTable(): TableFindResult {
+      const filtered = findTableByRowCount(10);
+
+      if (filtered.length === 0) return { ok: false, error: 'tbody>tr=10 のテーブルが見つかりません' };
+      if (filtered.length > 1)  return { ok: false, error: `tbody>tr=10 のテーブルが ${filtered.length} 件見つかりました（複数一致）` };
+
+      const table = filtered[0];
+      if (table.querySelectorAll('[id$="_lblLctCd"]:not([id*="lctOther"])').length === 0) {
+        return { ok: false, error: '通常講義テーブルの構造が不正です（曜日×時限セルが見つかりません）' };
+      }
+
+      return { ok: true, table };
+    }
+
+    function findOthersTable(): TableFindResult {
+      const filtered = findTableByRowCount(5);
+
+      if (filtered.length === 0) return { ok: false, error: 'tbody>tr=5 のテーブルが見つかりません' };
+      if (filtered.length > 1)  return { ok: false, error: `tbody>tr=5 のテーブルが ${filtered.length} 件見つかりました（複数一致）` };
+
+      const table = filtered[0];
+      if (table.querySelectorAll('[id*="lctOther"][id$="_lblLctCd"]').length === 0) {
+        return { ok: false, error: '集中講義テーブルの構造が不正です（lctOther セルが見つかりません）' };
+      }
+
+      return { ok: true, table };
+    }
+
+    function parseOthersTable(table: HTMLTableElement): LectureEntry[] {
+      const entries: LectureEntry[] = [];
+      const lctCdEls = Array.from(table.querySelectorAll('[id$="_lblLctCd"]'));
+
+      for (const lctCdEl of lctCdEls) {
+        const lctCd = lctCdEl.textContent?.trim() ?? '';
+        if (!lctCd) continue;
+
+        const syllabusUrl = (lctCdEl.querySelector('a') as HTMLAnchorElement | null)?.href ?? '';
+
+        // IDの末尾 _lblLctCd を除いた部分が sp になる
+        // 例: ctl00_phContents_rrMain_ttTable_lctOther3_ctl00
+        const sp = lctCdEl.id.replace('_lblLctCd', '');
+        const nMatch = sp.match(/lctOther(\d+)_ctl00$/);
+        const n = nMatch ? parseInt(nMatch[1]) : 0;
+
+        const staffEl = document.getElementById(`${sp}_lblStaffName`) as HTMLElement | null;
+        const staffLines = (staffEl?.innerText ?? '').split('\n').map(s => s.trim()).filter(Boolean);
+        const subjectName = staffLines[0] ?? '';
+        const teacher = staffLines[1] ?? '';
+        const actingUrl = (staffEl?.querySelector('a') as HTMLAnchorElement | null)?.href ?? '';
+
+        const sbjDiv = document.getElementById(`${sp}_lblSbjDivName`)?.textContent?.trim() ?? '';
+        const credit = document.getElementById(`${sp}_lblCredit`)?.textContent?.trim() ?? '';
+
+        entries.push({ day: '集中講義', period: n, lctCd, syllabusUrl, subjectName, actingUrl, teacher, sbjDiv, credit, lmsUrl: '' });
+      }
+      return entries;
+    }
+
     // ----- メイン処理 -----
 
     async function processRegistration() {
-      const targetId = 'ctl00_phContents_rrMain_ttTable_tblLecture';
       console.group('[GoodByeLMS] 登録処理開始');
 
       // ページ上のQドロップダウンを読む
@@ -404,11 +477,34 @@ export default defineContentScript({
       const year = getAcademicYear(new Date());
       console.log(`[GoodByeLMS] 対象: ${year}年度 Q${quarter}`);
 
-      // Step 1: テーブル取得
-      console.log('[GoodByeLMS] Step1: テーブルをパース中...');
+      // Step 1: テーブル探索 → パース
+      console.log('[GoodByeLMS] Step1: テーブルを探索中...');
       sendProgress(1, 'running');
-      const entries = parseTable(targetId);
-      console.log(`[GoodByeLMS] Step1: ${entries.length} 件取得`);
+
+      const lectureResult = findLectureTable();
+      if (!lectureResult.ok) {
+        console.error(`[GoodByeLMS] Step1: 通常講義テーブルエラー: ${lectureResult.error}`);
+        sendProgress(1, 'error', lectureResult.error);
+        console.groupEnd();
+        return;
+      }
+      console.log('[GoodByeLMS] Step1: 通常講義テーブル:', lectureResult.table);
+      const lectureEntries = parseTable(lectureResult.table);
+      console.log(`[GoodByeLMS] Step1: 通常講義 ${lectureEntries.length} 件`);
+
+      const othersResult = findOthersTable();
+      if (!othersResult.ok) {
+        console.error(`[GoodByeLMS] Step1: 集中講義テーブルエラー: ${othersResult.error}`);
+        sendProgress(1, 'error', othersResult.error);
+        console.groupEnd();
+        return;
+      }
+      console.log('[GoodByeLMS] Step1: 集中講義テーブル:', othersResult.table);
+      const othersEntries = parseOthersTable(othersResult.table);
+      console.log(`[GoodByeLMS] Step1: 集中講義 ${othersEntries.length} 件`);
+
+      const entries = [...lectureEntries, ...othersEntries];
+      console.log(`[GoodByeLMS] Step1: 合計 ${entries.length} 件取得`);
       console.table(entries.map(e => ({ 曜日: e.day, 時限: e.period, 科目名: e.subjectName, 教員: e.teacher, 科目区分: e.sbjDiv, 単位: e.credit })));
       sendProgress(1, 'done', `${entries.length} 件`);
 
