@@ -42,6 +42,7 @@
 
 6. あとはよしなに
 
+<a id="update"></a>
 ## アップデート方法 👋😁👋😁👋😁👋😁👋😁👋😁👋😁👋😁
 
 1. [リリース](https://github.com/ogawa3427/goodByeLMSPage/releases)から最新版のzipをDLして解凍する

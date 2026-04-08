@@ -165,11 +165,14 @@ function renderVersionStatus(updateCheck: UpdateCheck | undefined) {
     a.textContent = `v${updateCheck.latestVersion} があります`;
     statusEl.appendChild(a);
 
-    // Chrome/Firefox どちらでも成立するように汎用手順だけ出す
-    hintEl.innerHTML =
-      '① <a href="' + updateCheck.releaseUrl + '" target="_blank" style="color:#1a6fd4;">リリース</a> から zip をDLして解凍<br>' +
-      '② いま読み込ませている拡張フォルダに上書き<br>' +
-      '③ 拡張の管理画面で「更新」または再読み込み';
+    // ポップアップは幅が狭いので、詳細手順はREADMEに逃がす
+    hintEl.innerHTML = '更新方法: README を見てください ';
+    const how = document.createElement('a');
+    how.href = 'https://github.com/ogawa3427/goodByeLMSPage#update';
+    how.target = '_blank';
+    how.textContent = '方法はここ';
+    how.style.color = '#1a6fd4';
+    hintEl.appendChild(how);
 
   } else {
     statusEl.textContent = '最新です';
