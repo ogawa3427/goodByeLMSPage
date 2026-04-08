@@ -6,3 +6,5 @@ packages/
 docs/ref_course-list.css
 docs/ref_page.css
 docs/ref_page2.css
+
+.DS_Store
