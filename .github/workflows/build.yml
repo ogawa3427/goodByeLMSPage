@@ -7,12 +7,20 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to (re)build assets for (e.g. v1.2.0)'
+        required: true
+        type: string
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -22,12 +30,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build and zip (Chrome MV3)
-        run: npm run zip
+      - name: Build and zip (Chrome + Firefox)
+        run: npm run zip:all
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
           files: .output/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
