@@ -10,20 +10,31 @@ function compareVersions(a: string, b: string): number {
   return 0;
 }
 
+type ActionLike = {
+  setBadgeText?: (details: { text: string; tabId?: number }) => void | Promise<void>;
+  setBadgeBackgroundColor?: (details: { color: string; tabId?: number }) => void | Promise<void>;
+  openPopup?: () => Promise<void>;
+};
+
+const actionApi: ActionLike | undefined = (() => {
+  const g = globalThis as any;
+  return g.chrome?.action ?? g.chrome?.browserAction ?? g.browser?.action ?? g.browser?.browserAction;
+})();
+
 async function checkForUpdate() {
   try {
     const res = await fetch(GITHUB_API);
     if (!res.ok) return;
     const data = await res.json() as { tag_name: string; html_url: string };
     const latestVersion = data.tag_name.replace(/^v/, '');
-    const currentVersion = chrome.runtime.getManifest().version;
+    const currentVersion = browser.runtime.getManifest().version;
     const hasUpdate = compareVersions(latestVersion, currentVersion) > 0;
-    await chrome.storage.local.set({
+    await browser.storage.local.set({
       updateCheck: { hasUpdate, latestVersion, releaseUrl: data.html_url, checkedAt: Date.now() }
     });
     if (hasUpdate) {
-      chrome.action.setBadgeText({ text: 'NEW' });
-      chrome.action.setBadgeBackgroundColor({ color: '#e74c3c' });
+      actionApi?.setBadgeText?.({ text: 'NEW' });
+      actionApi?.setBadgeBackgroundColor?.({ color: '#e74c3c' });
     }
   } catch {
     // ネットワークエラー等は無視
@@ -31,13 +42,13 @@ async function checkForUpdate() {
 }
 
 export default defineBackground(() => {
-  chrome.runtime.onInstalled.addListener(() => {
+  browser.runtime.onInstalled.addListener(() => {
     checkForUpdate();
     // アラームはonInstalled内で作成（サービスワーカー起動直後はalarms APIが未初期化の場合がある）
-    chrome.alarms?.create('updateCheck', { periodInMinutes: 24 * 60 });
+    browser.alarms?.create('updateCheck', { periodInMinutes: 24 * 60 });
   });
-  chrome.runtime.onStartup.addListener(() => checkForUpdate());
-  chrome.alarms?.onAlarm.addListener((alarm) => {
+  browser.runtime.onStartup.addListener(() => checkForUpdate());
+  browser.alarms?.onAlarm.addListener((alarm) => {
     if (alarm.name === 'updateCheck') checkForUpdate();
   });
 
@@ -47,13 +58,13 @@ export default defineBackground(() => {
 
     if (msg.type === 'TABLE_DETECTED') {
       if (tabId == null) return;
-      chrome.action.openPopup().catch(() => {});
+      actionApi?.openPopup?.().catch(() => {});
     }
 
     if (msg.type === 'GLOW_ICON') {
       if (tabId == null) return;
-      chrome.action.setBadgeText({ text: '★', tabId });
-      chrome.action.setBadgeBackgroundColor({ color: '#ffcc00', tabId });
+      actionApi?.setBadgeText?.({ text: '★', tabId });
+      actionApi?.setBadgeBackgroundColor?.({ color: '#ffcc00', tabId });
     }
 
     if (msg.type === 'CHECK_UPDATE') {

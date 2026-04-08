@@ -5,6 +5,11 @@ export default defineConfig({
     name: 'Good Bye LMS Page',
     default_locale: 'ja',
     permissions: ['storage', 'tabs', 'alarms'],
+    host_permissions: [
+      'https://acanthus.cis.kanazawa-u.ac.jp/*',
+      'https://eduweb.sta.kanazawa-u.ac.jp/*',
+      'https://api.github.com/*',
+    ],
     icons: {
       16: 'images/icon-16.png',
       128: 'images/icon-128.png',

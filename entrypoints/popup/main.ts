@@ -38,7 +38,7 @@ function getQuarterFromDate(date: Date): 1 | 2 | 3 | 4 {
 
 // 旧データ (lectureData) を allLectureData へマイグレーション
 async function migrateLectureData(): Promise<void> {
-  const result = await chrome.storage.local.get(['allLectureData', 'lectureData', 'lectureRegisteredAt']);
+  const result = await browser.storage.local.get(['allLectureData', 'lectureData', 'lectureRegisteredAt']);
   if (result.allLectureData) return;
   if (!result.lectureData?.length) return;
 
@@ -50,7 +50,7 @@ async function migrateLectureData(): Promise<void> {
     entries: result.lectureData,
     registeredAt: regAt,
   }];
-  await chrome.storage.local.set({ allLectureData: allData });
+  await browser.storage.local.set({ allLectureData: allData });
 }
 
 const GITHUB_API = 'https://api.github.com/repos/ogawa3427/goodByeLMSPage/releases/latest';
@@ -70,17 +70,11 @@ async function fetchUpdateCheck(): Promise<void> {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json() as { tag_name: string; html_url: string };
   const latestVersion = data.tag_name.replace(/^v/, '');
-  const currentVersion = chrome.runtime.getManifest().version;
+  const currentVersion = browser.runtime.getManifest().version;
   const hasUpdate = compareVersions(latestVersion, currentVersion) > 0;
-  await chrome.storage.local.set({
+  await browser.storage.local.set({
     updateCheck: { hasUpdate, latestVersion, releaseUrl: data.html_url, checkedAt: Date.now() }
   });
-  if (hasUpdate) {
-    chrome.action.setBadgeText({ text: 'NEW' });
-    chrome.action.setBadgeBackgroundColor({ color: '#e74c3c' });
-  } else {
-    chrome.action.setBadgeText({ text: '' });
-  }
 }
 
 // ----- 講義ミニ一覧 -----
@@ -88,7 +82,7 @@ async function fetchUpdateCheck(): Promise<void> {
 async function initLectureMini() {
   await migrateLectureData();
 
-  const result = await chrome.storage.local.get('allLectureData');
+  const result = await browser.storage.local.get('allLectureData');
   const allData: QuarterData[] = result.allLectureData ?? [];
   const section = document.getElementById('lecture-mini-section')!;
   section.innerHTML = '';
@@ -97,15 +91,19 @@ async function initLectureMini() {
   const currentYear = getAcademicYear(now);
   const currentQ = getQuarterFromDate(now);
 
-  // ヘッダー
+  const byCurrent = allData.find(d => d.year === currentYear && d.quarter === currentQ);
+  const byLatest = [...allData].sort((a, b) => (b.registeredAt ?? 0) - (a.registeredAt ?? 0))[0];
+  const picked = byCurrent?.entries?.length ? byCurrent : (byLatest?.entries?.length ? byLatest : undefined);
+
+  // ヘッダー（現在Qが空なら、直近の登録データを表示）
   const header = document.createElement('div');
   header.className = 'mini-header';
-  header.textContent = `${currentYear}年度 Q${currentQ}`;
+  header.textContent = picked
+    ? `${picked.year}年度 Q${picked.quarter}`
+    : `${currentYear}年度 Q${currentQ}`;
   section.appendChild(header);
 
-  const current = allData.find(d => d.year === currentYear && d.quarter === currentQ);
-
-  if (!current || current.entries.length === 0) {
+  if (!picked) {
     const empty = document.createElement('div');
     empty.className = 'mini-empty';
     empty.textContent = '未登録 — 学務情報サービスの「履修時間割」ページを開いてデータを登録してください';
@@ -114,7 +112,7 @@ async function initLectureMini() {
   }
 
   const DAY_ORDER = ['月', '火', '水', '木', '金', '土'];
-  const sorted = [...current.entries].sort((a, b) => {
+  const sorted = [...picked.entries].sort((a, b) => {
     const da = DAY_ORDER.indexOf(a.day);
     const db = DAY_ORDER.indexOf(b.day);
     if (da !== db) return (da === -1 ? 99 : da) - (db === -1 ? 99 : db);
@@ -153,6 +151,8 @@ async function initLectureMini() {
 
 function renderVersionStatus(updateCheck: UpdateCheck | undefined) {
   const statusEl = document.getElementById('version-status')!;
+  const hintEl = document.getElementById('version-hint')!;
+  hintEl.innerHTML = '';
   if (!updateCheck) {
     statusEl.textContent = '未確認';
     return;
@@ -165,19 +165,14 @@ function renderVersionStatus(updateCheck: UpdateCheck | undefined) {
     a.textContent = `v${updateCheck.latestVersion} があります`;
     statusEl.appendChild(a);
 
-    const hint = document.createElement('div');
-    hint.style.cssText = 'font-size:10px; color:#888; margin-top:4px; line-height:1.6;';
-    hint.innerHTML =
-      '① <a href="' + updateCheck.releaseUrl + '" target="_blank" style="color:#1a6fd4;">zip をDL</a> して解凍<br>' +
-      '② 今のインストールフォルダに上書き<br>' +
-      '③ アドレスバーに <code style="background:#f0f0f0;padding:1px 4px;border-radius:3px;font-size:9px;">chrome://extensions</code> → 更新ボタン';
-    statusEl.appendChild(hint);
+    // Chrome/Firefox どちらでも成立するように汎用手順だけ出す
+    hintEl.innerHTML =
+      '① <a href="' + updateCheck.releaseUrl + '" target="_blank" style="color:#1a6fd4;">リリース</a> から zip をDLして解凍<br>' +
+      '② いま読み込ませている拡張フォルダに上書き<br>' +
+      '③ 拡張の管理画面で「更新」または再読み込み';
 
-    chrome.action.setBadgeText({ text: 'NEW' });
-    chrome.action.setBadgeBackgroundColor({ color: '#e74c3c' });
   } else {
     statusEl.textContent = '最新です';
-    chrome.action.setBadgeText({ text: '' });
   }
 }
 
@@ -185,10 +180,10 @@ async function initVersionSection() {
   const currentEl = document.getElementById('version-current')!;
   const checkBtn = document.getElementById('version-check-btn') as HTMLButtonElement;
 
-  const currentVersion = chrome.runtime.getManifest().version;
+  const currentVersion = browser.runtime.getManifest().version;
   currentEl.textContent = currentVersion;
 
-  const result = await chrome.storage.local.get('updateCheck');
+  const result = await browser.storage.local.get('updateCheck');
   renderVersionStatus(result.updateCheck as UpdateCheck | undefined);
 
   checkBtn.addEventListener('click', async () => {
@@ -196,14 +191,20 @@ async function initVersionSection() {
     checkBtn.textContent = '確認中...';
     document.getElementById('version-status')!.textContent = '確認中...';
     try {
-      await fetchUpdateCheck();
+      // Firefoxでは popup からの fetch/権限周りが面倒なので background に委譲
+      await browser.runtime.sendMessage({ type: 'CHECK_UPDATE' });
     } catch (e) {
-      document.getElementById('version-status')!.textContent = `エラー: ${e}`;
-      checkBtn.disabled = false;
-      checkBtn.textContent = '更新確認';
-      return;
+      // background 側が居ない等の例外時はフォールバックで直接叩く
+      try {
+        await fetchUpdateCheck();
+      } catch (e2) {
+        document.getElementById('version-status')!.textContent = `エラー: ${e2}`;
+        checkBtn.disabled = false;
+        checkBtn.textContent = '更新確認';
+        return;
+      }
     }
-    const updated = await chrome.storage.local.get('updateCheck');
+    const updated = await browser.storage.local.get('updateCheck');
     renderVersionStatus(updated.updateCheck as UpdateCheck | undefined);
     checkBtn.disabled = false;
     checkBtn.textContent = '更新確認';
@@ -307,7 +308,7 @@ function initDataSettings() {
 
   document.getElementById('btn-delete')!.addEventListener('click', async () => {
     if (!confirm('全期間の登録データをすべて削除しますか？')) return;
-    await chrome.storage.local.remove(['allLectureData', 'lectureData', 'lectureRegisteredAt']);
+    await browser.storage.local.remove(['allLectureData', 'lectureData', 'lectureRegisteredAt']);
     initLectureMini();
     feedback.style.color = '#c0392b';
     feedback.textContent = '削除しました';
@@ -315,7 +316,7 @@ function initDataSettings() {
   });
 
   document.getElementById('btn-export')!.addEventListener('click', async () => {
-    const result = await chrome.storage.local.get('allLectureData');
+    const result = await browser.storage.local.get('allLectureData');
     const data = result.allLectureData ?? [];
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -338,7 +339,7 @@ function initDataSettings() {
       const text = await file.text();
       const parsed = JSON.parse(text);
       if (!Array.isArray(parsed)) throw new Error('配列ではありません');
-      await chrome.storage.local.set({ allLectureData: parsed });
+      await browser.storage.local.set({ allLectureData: parsed });
       await initLectureMini();
       const total = parsed.reduce((acc: number, q: QuarterData) => acc + (q.entries?.length ?? 0), 0);
       feedback.style.color = '#2a7a2a';

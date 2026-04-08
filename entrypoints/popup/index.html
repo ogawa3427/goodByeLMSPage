@@ -211,10 +211,17 @@
       #version-section {
         padding: 8px 16px;
         display: flex;
-        align-items: center;
-        gap: 6px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
         font-size: 11px;
         color: #999;
+      }
+
+      #version-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
       }
 
       #version-label {
@@ -228,6 +235,13 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+
+      #version-hint {
+        font-size: 10px;
+        color: #888;
+        line-height: 1.6;
+        white-space: normal;
       }
 
       #version-status a {
@@ -366,9 +380,12 @@
     </div>
 
     <div id="version-section">
-      <span id="version-label">v<span id="version-current"></span></span>
-      <span id="version-status">確認中...</span>
-      <button id="version-check-btn">更新確認</button>
+      <div id="version-row">
+        <span id="version-label">v<span id="version-current"></span></span>
+        <span id="version-status">確認中...</span>
+        <button id="version-check-btn">更新確認</button>
+      </div>
+      <div id="version-hint"></div>
     </div>
 
     <details id="data-settings">
