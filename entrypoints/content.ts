@@ -57,6 +57,7 @@ export default defineContentScript({
   matches: [
     'https://acanthus.cis.kanazawa-u.ac.jp/*',
     'https://eduweb.sta.kanazawa-u.ac.jp/*',
+    'file:///*',
   ],
   runAt: 'document_idle',
 
@@ -155,16 +156,9 @@ export default defineContentScript({
       table.className = 'lms-course-list-table lms-course-list-lms-panel';
       table.style.cssText = 'width:100%; max-width:900px; border-collapse:collapse; margin:0 auto;';
 
-      const tbody = document.createElement('tbody');
-      for (const e of sorted) {
-        const tr = document.createElement('tr');
-
-        const tdPeriod = document.createElement('td');
-        tdPeriod.style.cssText = 'width:8%; white-space:nowrap; padding:14px 8px; font-size:1.0em;';
-        tdPeriod.textContent = `${e.day}${e.period}限`;
-
-        const tdSyllabus = document.createElement('td');
-        tdSyllabus.style.cssText = 'width:4%; padding:14px 6px; text-align:center; vertical-align:middle;';
+      function buildSyllabusCell(e: LectureEntry): HTMLTableCellElement {
+        const td = document.createElement('td');
+        td.style.cssText = 'width:4%; padding:14px 6px; text-align:center; vertical-align:middle;';
         if (e.syllabusUrl) {
           const sa = document.createElement('a');
           sa.href = e.syllabusUrl;
@@ -185,22 +179,34 @@ export default defineContentScript({
             'border-radius:2px',
             'flex-shrink:0',
           ].join(';');
-          tdSyllabus.appendChild(sa);
+          td.appendChild(sa);
         }
+        return td;
+      }
 
-        const tdSubject = document.createElement('td');
-        tdSubject.style.cssText = 'width:41%; padding:14px 8px; font-size:1.05em;';
+      function buildSubjectCell(e: LectureEntry): HTMLTableCellElement {
+        const td = document.createElement('td');
+        td.style.cssText = 'width:41%; padding:14px 8px; font-size:1.05em;';
         if (e.lmsUrl) {
           const a = document.createElement('a');
           a.href = e.lmsUrl;
           a.target = 'webclass';
           a.textContent = e.subjectName;
           a.className = 'lms-course-list_emphasize-txt';
-          tdSubject.appendChild(a);
+          td.appendChild(a);
         } else {
-          tdSubject.textContent = e.subjectName;
-          tdSubject.style.color = '#888';
+          td.textContent = e.subjectName;
+          td.style.color = '#888';
         }
+        return td;
+      }
+
+      function buildEntryRow(e: LectureEntry, showPeriod: boolean): HTMLTableRowElement {
+        const tr = document.createElement('tr');
+
+        const tdPeriod = document.createElement('td');
+        tdPeriod.style.cssText = 'width:8%; white-space:nowrap; padding:14px 8px; font-size:1.0em;';
+        if (showPeriod) tdPeriod.textContent = e.day === '集中講義' ? e.day : `${e.day}${e.period}限`;
 
         const tdTeacher = document.createElement('td');
         tdTeacher.style.cssText = 'width:30%; padding:14px 8px; font-size:0.95em; color:#555;';
@@ -211,11 +217,61 @@ export default defineContentScript({
         tdMeta.textContent = `${e.sbjDiv} ${e.credit}`.trim();
 
         tr.appendChild(tdPeriod);
-        tr.appendChild(tdSyllabus);
-        tr.appendChild(tdSubject);
+        tr.appendChild(buildSyllabusCell(e));
+        tr.appendChild(buildSubjectCell(e));
         tr.appendChild(tdTeacher);
         tr.appendChild(tdMeta);
-        tbody.appendChild(tr);
+        return tr;
+      }
+
+      // スロット（曜日×時限）ごとにグループ化
+      const groups: LectureEntry[][] = [];
+      for (const e of sorted) {
+        const last = groups[groups.length - 1];
+        if (last && last[0].day === e.day && last[0].period === e.period) {
+          last.push(e);
+        } else {
+          groups.push([e]);
+        }
+      }
+
+      const tbody = document.createElement('tbody');
+      for (const group of groups) {
+        const main = group[0];
+        const extras = group.slice(1);
+
+        tbody.appendChild(buildEntryRow(main, true));
+
+        if (extras.length > 0) {
+          const expandTr = document.createElement('tr');
+
+          const tdEmpty = document.createElement('td');
+          tdEmpty.style.cssText = 'width:8%;';
+          expandTr.appendChild(tdEmpty);
+
+          const tdDetails = document.createElement('td');
+          tdDetails.colSpan = 4;
+          tdDetails.style.cssText = 'padding:0 8px 8px;';
+
+          const details = document.createElement('details');
+          const summary = document.createElement('summary');
+          summary.textContent = `+${extras.length}件`;
+          summary.style.cssText = 'font-size:0.8em; color:#999; cursor:pointer; list-style:none; padding:2px 0; user-select:none;';
+          details.appendChild(summary);
+
+          const innerTable = document.createElement('table');
+          innerTable.style.cssText = 'width:100%; border-collapse:collapse; margin-top:4px;';
+          const innerTbody = document.createElement('tbody');
+          for (const extra of extras) {
+            innerTbody.appendChild(buildEntryRow(extra, false));
+          }
+          innerTable.appendChild(innerTbody);
+          details.appendChild(innerTable);
+
+          tdDetails.appendChild(details);
+          expandTr.appendChild(tdDetails);
+          tbody.appendChild(expandTr);
+        }
       }
 
       table.appendChild(tbody);
@@ -313,30 +369,45 @@ export default defineContentScript({
     // ----- テーブルパース -----
 
     function parseTable(table: HTMLTableElement): LectureEntry[] {
-      const prefix = table.id.replace('_tblLecture', '');
       const entries: LectureEntry[] = [];
 
-      for (const period of PERIODS) {
-        for (const day of DAYS) {
-          const sp = `${prefix}_lct${day.key}${period}_ctl00`;
+      // rrMain: _lct{Day}{Period}_ctl00_lblLctCd
+      // ucCourseSchedule: _lct{Day}{Period}_ctl{nn}_lblLctCd (同一スロットに複数あり得る)
+      // どちらも table 内の全 _lblLctCd を拾って ID から曜日・時限を逆引きする
+      const dayKeyMap: Record<string, string> = Object.fromEntries(DAYS.map(d => [d.key, d.label]));
+      const lctCdEls = Array.from(
+        table.querySelectorAll('[id$="_lblLctCd"]:not([id*="lctOther"])')
+      ) as HTMLElement[];
 
-          const lctCdEl = document.getElementById(`${sp}_lblLctCd`);
-          const lctCd = lctCdEl?.textContent?.trim() ?? '';
-          if (!lctCd) continue;
+      for (const lctCdEl of lctCdEls) {
+        const lctCd = lctCdEl.textContent?.trim() ?? '';
+        if (!lctCd) continue;
 
-          const syllabusUrl = (lctCdEl?.querySelector('a') as HTMLAnchorElement | null)?.href ?? '';
+        const m = lctCdEl.id.match(/lct(Mon|Tue|Wed|Thu|Fri|Sat)(\d+)_ctl\d+_lblLctCd/);
+        if (!m) continue;
+        const dayLabel = dayKeyMap[m[1]];
+        const period = parseInt(m[2]);
+        if (!dayLabel || !PERIODS.includes(period as typeof PERIODS[number])) continue;
 
-          const staffEl = document.getElementById(`${sp}_lblStaffName`) as HTMLElement | null;
-          const staffLines = (staffEl?.innerText ?? '').split('\n').map(s => s.trim()).filter(Boolean);
-          const subjectName = staffLines[0] ?? '';
-          const teacher = staffLines[1] ?? '';
-          const actingUrl = (staffEl?.querySelector('a') as HTMLAnchorElement | null)?.href ?? '';
+        const sp = lctCdEl.id.replace('_lblLctCd', '');
 
-          const sbjDiv = document.getElementById(`${sp}_lblSbjDivName`)?.textContent?.trim() ?? '';
-          const credit = document.getElementById(`${sp}_lblCredit`)?.textContent?.trim() ?? '';
+        // rrMain は lblStaffName に科目名+教員名が入る
+        // ucCourseSchedule は lblLctName に科目名リンク
+        const syllabusUrl = (lctCdEl.querySelector('a') as HTMLAnchorElement | null)?.href ?? '';
+        const staffEl = document.getElementById(`${sp}_lblStaffName`) as HTMLElement | null;
+        const lctNameEl = document.getElementById(`${sp}_lblLctName`);
+        const staffLines = (staffEl?.innerText ?? '').split('\n').map(s => s.trim()).filter(Boolean);
+        const subjectName = staffLines[0] || lctNameEl?.textContent?.replace(/\s+/g, ' ').trim() || '';
+        const teacher = staffLines[1] ?? '';
+        const actingUrl =
+          (staffEl?.querySelector('a') as HTMLAnchorElement | null)?.href
+          ?? (lctNameEl as HTMLAnchorElement | null)?.href
+          ?? '';
 
-          entries.push({ day: day.label, period, lctCd, syllabusUrl, subjectName, actingUrl, teacher, sbjDiv, credit, lmsUrl: '' });
-        }
+        const sbjDiv = document.getElementById(`${sp}_lblSbjDivName`)?.textContent?.trim() ?? '';
+        const credit = document.getElementById(`${sp}_lblCredit`)?.textContent?.trim() ?? '';
+
+        entries.push({ day: dayLabel, period, lctCd, syllabusUrl, subjectName, actingUrl, teacher, sbjDiv, credit, lmsUrl: '' });
       }
       return entries;
     }
@@ -371,13 +442,17 @@ export default defineContentScript({
         }
 
         const doc = new DOMParser().parseFromString(res.html, 'text/html');
-        const a = doc.querySelector('a[href*="acanthus.cis.kanazawa-u.ac.jp/base/lms-course/sso-link/"]') as HTMLAnchorElement | null;
+        // sso-link = WebClass直接起動（優先）、sso-course-detail = コース詳細ページ（フォールバック）
+        const a =
+          (doc.querySelector('a[href*="acanthus.cis.kanazawa-u.ac.jp/base/lms-course/sso-link/"]') as HTMLAnchorElement | null)
+          ?? (doc.querySelector('a[href*="acanthus.cis.kanazawa-u.ac.jp/base/lms-course/sso-course-detail/"]') as HTMLAnchorElement | null);
 
         if (a) {
-          console.log(`[GoodByeLMS] ${tag} LMSリンク取得成功: ${a.href}`);
+          const linkType = a.href.includes('sso-link') ? 'sso-link' : 'sso-course-detail';
+          console.log(`[GoodByeLMS] ${tag} LMSリンク取得成功 (${linkType}): ${a.href}`);
           return { lmsUrl: a.href, level: 'ok' };
         } else {
-          console.warn(`[GoodByeLMS] ${tag} sso-link が見つかりません (LMSなし科目の可能性あり)`);
+          console.warn(`[GoodByeLMS] ${tag} LMSリンクが見つかりません (LMSなし科目の可能性あり)`);
           return { lmsUrl: '', level: 'warn' };
         }
       } catch (e) {
@@ -408,8 +483,21 @@ export default defineContentScript({
       return filtered;
     }
 
+    function findTablesByLectureId(): HTMLTableElement[] {
+      const tables = Array.from(document.querySelectorAll('table[id*="tblLecture"]')) as HTMLTableElement[];
+      console.log(`[GoodByeLMS] id*=tblLecture のテーブル数: ${tables.length}`);
+      for (const t of tables) console.log(t);
+      return tables;
+    }
+
     function findLectureTable(): TableFindResult {
-      const filtered = findTableByRowCount(10);
+      let filtered = findTableByRowCount(10);
+      if (filtered.length === 0) {
+        filtered = findTablesByLectureId().filter(t =>
+          t.querySelectorAll('[id$="_lblLctCd"]:not([id*="lctOther"])').length > 0
+        );
+        console.log(`[GoodByeLMS] fallback 通常講義候補数: ${filtered.length}`);
+      }
 
       if (filtered.length === 0) return { ok: false, error: 'tbody>tr=10 のテーブルが見つかりません' };
       if (filtered.length > 1)  return { ok: false, error: `tbody>tr=10 のテーブルが ${filtered.length} 件見つかりました（複数一致）` };
@@ -422,18 +510,22 @@ export default defineContentScript({
       return { ok: true, table };
     }
 
-    function findOthersTable(): TableFindResult {
-      const filtered = findTableByRowCount(5);
+    function findOthersTable(lectureTable: HTMLTableElement): TableFindResult {
+      // lecture table と同じ親コンテナ内の兄弟テーブルを探す
+      const container = lectureTable.parentElement;
+      const siblings = container
+        ? (Array.from(container.querySelectorAll('table')) as HTMLTableElement[]).filter(t => t !== lectureTable)
+        : [];
 
-      if (filtered.length === 0) return { ok: false, error: 'tbody>tr=5 のテーブルが見つかりません' };
-      if (filtered.length > 1)  return { ok: false, error: `tbody>tr=5 のテーブルが ${filtered.length} 件見つかりました（複数一致）` };
+      const candidates = siblings.filter(t =>
+        t.querySelectorAll('[id*="lctOther"][id$="_lblLctCd"]').length > 0
+      );
+      console.log(`[GoodByeLMS] 集中講義テーブル候補数 (兄弟探索): ${candidates.length}`);
 
-      const table = filtered[0];
-      if (table.querySelectorAll('[id*="lctOther"][id$="_lblLctCd"]').length === 0) {
-        return { ok: false, error: '集中講義テーブルの構造が不正です（lctOther セルが見つかりません）' };
-      }
+      if (candidates.length === 0) return { ok: false, error: '集中講義テーブルが見つかりません（lctOther セルが見つかりません）' };
+      if (candidates.length > 1)  return { ok: false, error: `集中講義テーブルが ${candidates.length} 件見つかりました（複数一致）` };
 
-      return { ok: true, table };
+      return { ok: true, table: candidates[0] };
     }
 
     function parseOthersTable(table: HTMLTableElement): LectureEntry[] {
@@ -447,16 +539,22 @@ export default defineContentScript({
         const syllabusUrl = (lctCdEl.querySelector('a') as HTMLAnchorElement | null)?.href ?? '';
 
         // IDの末尾 _lblLctCd を除いた部分が sp になる
-        // 例: ctl00_phContents_rrMain_ttTable_lctOther3_ctl00
+        // 例 (rrMain): ctl00_phContents_rrMain_ttTable_lctOther3_ctl00
+        // 例 (ucCourseSchedule): ctl00_phContents_ucCourseSchedule_ttTable_lctOther1_ctl01
         const sp = lctCdEl.id.replace('_lblLctCd', '');
-        const nMatch = sp.match(/lctOther(\d+)_ctl00$/);
+        const nMatch = sp.match(/lctOther(\d+)/);
         const n = nMatch ? parseInt(nMatch[1]) : 0;
 
+        // rrMain は lblStaffName に科目名+教員名、ucCourseSchedule は lblLctName に科目名リンク
         const staffEl = document.getElementById(`${sp}_lblStaffName`) as HTMLElement | null;
+        const lctNameEl = document.getElementById(`${sp}_lblLctName`);
         const staffLines = (staffEl?.innerText ?? '').split('\n').map(s => s.trim()).filter(Boolean);
-        const subjectName = staffLines[0] ?? '';
+        const subjectName = staffLines[0] || lctNameEl?.textContent?.trim() || '';
         const teacher = staffLines[1] ?? '';
-        const actingUrl = (staffEl?.querySelector('a') as HTMLAnchorElement | null)?.href ?? '';
+        const actingUrl =
+          (staffEl?.querySelector('a') as HTMLAnchorElement | null)?.href
+          ?? (lctNameEl as HTMLAnchorElement | null)?.href
+          ?? '';
 
         const sbjDiv = document.getElementById(`${sp}_lblSbjDivName`)?.textContent?.trim() ?? '';
         const credit = document.getElementById(`${sp}_lblCredit`)?.textContent?.trim() ?? '';
@@ -472,7 +570,11 @@ export default defineContentScript({
       console.group('[GoodByeLMS] 登録処理開始');
 
       // ページ上のQドロップダウンを読む
-      const qSelectEl = document.getElementById('ctl00_phContents_ucRegistSearchList_ddlTerm') as HTMLSelectElement | null;
+      // rrMain: ucRegistSearchList_ddlTerm / ucCourseSchedule: ucCourseSchedule_ddlTerm
+      const qSelectEl = (
+        document.getElementById('ctl00_phContents_ucRegistSearchList_ddlTerm')
+        ?? document.getElementById('ctl00_phContents_ucCourseSchedule_ddlTerm')
+      ) as HTMLSelectElement | null;
       const quarter = mapQSelectValue(qSelectEl?.value ?? '');
       const year = getAcademicYear(new Date());
       console.log(`[GoodByeLMS] 対象: ${year}年度 Q${quarter}`);
@@ -492,7 +594,7 @@ export default defineContentScript({
       const lectureEntries = parseTable(lectureResult.table);
       console.log(`[GoodByeLMS] Step1: 通常講義 ${lectureEntries.length} 件`);
 
-      const othersResult = findOthersTable();
+      const othersResult = findOthersTable(lectureResult.table);
       if (!othersResult.ok) {
         console.error(`[GoodByeLMS] Step1: 集中講義テーブルエラー: ${othersResult.error}`);
         sendProgress(1, 'error', othersResult.error);

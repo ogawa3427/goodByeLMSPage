@@ -9,6 +9,7 @@ export default defineConfig({
       'https://acanthus.cis.kanazawa-u.ac.jp/*',
       'https://eduweb.sta.kanazawa-u.ac.jp/*',
       'https://api.github.com/*',
+      'file:///*',
     ],
     icons: {
       16: 'images/icon-16.png',

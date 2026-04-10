@@ -114,6 +114,29 @@
 
       #error-section p { line-height: 1.5; }
       #error-section p + p { margin-top: 6px; }
+      #error-row-hint { margin-top: 8px; font-size: 11px; color: #666; }
+      #error-row-hint .row-controls {
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      #others-row-input {
+        width: 46px;
+        padding: 2px 4px;
+        border: 1px solid #d9b5b5;
+        border-radius: 3px;
+        font-size: 11px;
+      }
+      #btn-save-others-row {
+        padding: 2px 8px;
+        font-size: 11px;
+        border: 1px solid #d9b5b5;
+        border-radius: 3px;
+        background: #fff;
+        color: #a33;
+      }
+      #others-row-feedback { min-height: 1.2em; color: #a33; }
 
       .error-hint {
         color: #888;
@@ -153,7 +176,7 @@
 
       /* 講義ミニ一覧 */
       #lecture-mini-section {
-        max-height: 192px;
+        max-height: 600px;
         overflow-y: auto;
         border-bottom: 1px solid #eee;
       }
@@ -206,6 +229,26 @@
       .mini-subject a:hover { text-decoration: underline; }
 
       .mini-subject span { color: #aaa; }
+
+      .mini-extra-toggle {
+        margin-left: auto;
+        flex-shrink: 0;
+        font-size: 10px;
+        color: #bbb;
+        cursor: pointer;
+        padding: 2px 4px;
+        user-select: none;
+      }
+
+      .mini-extra-toggle:hover { color: #888; }
+
+      .mini-extras { display: block; }
+      .mini-extras summary { display: none; }
+
+      .mini-extra-row {
+        background: #fafafa;
+        border-left: 2px solid #e8e8e8;
+      }
 
       /* バージョンセクション */
       #version-section {
@@ -345,6 +388,14 @@
 
     <div id="error-section" style="display: none;">
       <p id="error-msg"></p>
+      <div id="error-row-hint" style="display: none;">
+        <div>集中講義テーブル探索行数: デフォルトは 5。4 の人は 4 を入れて保存。</div>
+        <div class="row-controls">
+          <input id="others-row-input" type="number" min="1" step="1" value="5" />
+          <button id="btn-save-others-row">保存</button>
+          <span id="others-row-feedback"></span>
+        </div>
+      </div>
       <p class="error-hint">DevTools の Console を開いてログをコピーし、開発者に報告してください。</p>
     </div>
 

@@ -14,3 +14,4 @@
 - 一旦これだけ
 
 https://acanthus.cis.kanazawa-u.ac.jp/base/lms-course/sso-link/?courseId=26010073H00130&systemType=1
+https://eduweb.sta.kanazawa-u.ac.jp/Portal/Public/Syllabus/DetailMain.aspx?lct_year=2026&fac_cd=-&lct_no=73H00.13

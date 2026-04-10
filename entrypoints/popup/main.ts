@@ -104,10 +104,7 @@ async function initLectureMini() {
   section.appendChild(header);
 
   if (!picked) {
-    const empty = document.createElement('div');
-    empty.className = 'mini-empty';
-    empty.textContent = '未登録 — 学務情報サービスの「履修時間割」ページを開いてデータを登録してください';
-    section.appendChild(empty);
+    renderEmptyMiniSection(section);
     return;
   }
 
@@ -119,14 +116,7 @@ async function initLectureMini() {
     return a.period - b.period;
   });
 
-  for (const e of sorted) {
-    const row = document.createElement('div');
-    row.className = 'mini-row';
-
-    const period = document.createElement('span');
-    period.className = 'mini-period';
-    period.textContent = `${e.day}${e.period}限`;
-
+  function buildMiniSubject(e: LectureEntry): HTMLSpanElement {
     const subject = document.createElement('span');
     subject.className = 'mini-subject';
     if (e.lmsUrl) {
@@ -140,10 +130,70 @@ async function initLectureMini() {
       sp.textContent = e.subjectName;
       subject.appendChild(sp);
     }
+    return subject;
+  }
+
+  // スロット（曜日×時限）ごとにグループ化
+  const groups: LectureEntry[][] = [];
+  for (const e of sorted) {
+    const last = groups[groups.length - 1];
+    if (last && last[0].day === e.day && last[0].period === e.period) {
+      last.push(e);
+    } else {
+      groups.push([e]);
+    }
+  }
+
+  for (const group of groups) {
+    const main = group[0];
+    const extras = group.slice(1);
+
+    const row = document.createElement('div');
+    row.className = 'mini-row';
+
+    const period = document.createElement('span');
+    period.className = 'mini-period';
+    period.textContent = main.day === '集中講義' ? main.day : `${main.day}${main.period}限`;
 
     row.appendChild(period);
-    row.appendChild(subject);
+    row.appendChild(buildMiniSubject(main));
+
+    if (extras.length > 0) {
+      const toggle = document.createElement('span');
+      toggle.className = 'mini-extra-toggle';
+      toggle.textContent = `▶+${extras.length}`;
+      row.appendChild(toggle);
+    }
+
     section.appendChild(row);
+
+    if (extras.length > 0) {
+      const details = document.createElement('details');
+      details.className = 'mini-extras';
+      // summary は非表示にしてトグルボタン代わりの span から操作
+      const summary = document.createElement('summary');
+      summary.style.display = 'none';
+      details.appendChild(summary);
+
+      for (const extra of extras) {
+        const extraRow = document.createElement('div');
+        extraRow.className = 'mini-row mini-extra-row';
+        const emptyPeriod = document.createElement('span');
+        emptyPeriod.className = 'mini-period';
+        extraRow.appendChild(emptyPeriod);
+        extraRow.appendChild(buildMiniSubject(extra));
+        details.appendChild(extraRow);
+      }
+
+      section.appendChild(details);
+
+      // toggle span クリックで details を開閉
+      const toggle = row.querySelector('.mini-extra-toggle') as HTMLSpanElement;
+      toggle.addEventListener('click', () => {
+        details.open = !details.open;
+        toggle.textContent = details.open ? `▼+${extras.length}` : `▶+${extras.length}`;
+      });
+    }
   }
 }
 
@@ -221,6 +271,39 @@ const progressSection = document.getElementById('progress-section')!;
 const btnYes = document.getElementById('btn-yes')!;
 const btnLater = document.getElementById('btn-later')!;
 
+async function startRegistrationFlow() {
+  const btnRow = document.querySelector('.btn-row');
+  if (btnRow) btnRow.remove();
+  const registerText = document.querySelector('#register-section p');
+  if (registerText) registerText.remove();
+  registerSection.style.background = 'transparent';
+  registerSection.style.borderBottom = 'none';
+  registerSection.style.padding = '0';
+  progressSection.style.display = 'block';
+
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  if (tab?.id) {
+    browser.tabs.sendMessage(tab.id, { type: 'REGISTER_DATA' });
+  }
+}
+
+function renderEmptyMiniSection(section: HTMLElement) {
+  const empty = document.createElement('div');
+  empty.className = 'mini-empty';
+  empty.append(document.createTextNode('未登録 — 学務情報サービスの「履修時間割」ページを開いてデータを'));
+  const registerLink = document.createElement('a');
+  registerLink.href = '#';
+  registerLink.textContent = '登録';
+  registerLink.style.cssText = 'color: inherit; text-decoration: none;';
+  registerLink.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await startRegistrationFlow();
+  });
+  empty.append(registerLink);
+  empty.append(document.createTextNode('してください'));
+  section.appendChild(empty);
+}
+
 async function init() {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) return;
@@ -260,6 +343,22 @@ function setStep(step: 1 | 2 | 3, status: 'running' | 'done' | 'error', detail?:
 
 const errorSection = document.getElementById('error-section')!;
 const errorMsg = document.getElementById('error-msg')!;
+const errorRowHint = document.getElementById('error-row-hint')!;
+const othersRowInput = document.getElementById('others-row-input') as HTMLInputElement;
+const btnSaveOthersRow = document.getElementById('btn-save-others-row') as HTMLButtonElement;
+const othersRowFeedback = document.getElementById('others-row-feedback')!;
+
+async function loadOthersRowCount() {
+  const result = await browser.storage.local.get('othersTableRowCount');
+  const raw = Number(result.othersTableRowCount);
+  const value = Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 5;
+  othersRowInput.value = String(value);
+}
+
+function shouldShowOthersRowHint(msg: { step?: 1 | 2 | 3; status?: 'running' | 'done' | 'error'; detail?: string }): boolean {
+  if (msg.step !== 1 || msg.status !== 'error' || !msg.detail) return false;
+  return msg.detail.includes('tbody>tr=');
+}
 
 browser.runtime.onMessage.addListener((message) => {
   const msg = message as {
@@ -272,6 +371,12 @@ browser.runtime.onMessage.addListener((message) => {
 
   if (msg.type === 'PROGRESS_UPDATE') {
     setStep(msg.step!, msg.status!, msg.detail);
+    if (shouldShowOthersRowHint(msg)) {
+      errorSection.style.display = 'block';
+      errorMsg.textContent = `⚠ ${msg.detail}`;
+      errorRowHint.style.display = 'block';
+      loadOthersRowCount().catch(() => {});
+    }
     if (msg.step === 3 && msg.status === 'done') {
       initLectureMini();
     }
@@ -286,17 +391,7 @@ browser.runtime.onMessage.addListener((message) => {
 // ----- ボタン操作 -----
 
 btnYes.addEventListener('click', async () => {
-  document.querySelector('.btn-row')!.remove();
-  document.querySelector('#register-section p')!.remove();
-  registerSection.style.background = 'transparent';
-  registerSection.style.borderBottom = 'none';
-  registerSection.style.padding = '0';
-  progressSection.style.display = 'block';
-
-  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-  if (tab?.id) {
-    browser.tabs.sendMessage(tab.id, { type: 'REGISTER_DATA' });
-  }
+  await startRegistrationFlow();
 });
 
 btnLater.addEventListener('click', () => {
@@ -355,7 +450,23 @@ function initDataSettings() {
   });
 }
 
+function initOthersRowSetting() {
+  btnSaveOthersRow.addEventListener('click', async () => {
+    const n = Number(othersRowInput.value);
+    if (!Number.isFinite(n) || n <= 0) {
+      othersRowFeedback.textContent = '1以上の整数を入力';
+      return;
+    }
+    const value = Math.floor(n);
+    await browser.storage.local.set({ othersTableRowCount: value });
+    othersRowInput.value = String(value);
+    othersRowFeedback.textContent = `保存: ${value}`;
+    setTimeout(() => { othersRowFeedback.textContent = ''; }, 2000);
+  });
+}
+
 init();
 initLectureMini();
 initVersionSection();
 initDataSettings();
+initOthersRowSetting();
