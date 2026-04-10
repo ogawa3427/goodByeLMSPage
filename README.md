@@ -1,6 +1,9 @@
 # ハッシュタグ #バイバイ金大LMS 
 # Good Bye LMS Page 👋😁 👋😁 👋😁 👋😁 👋😁 👋😁 👋😁 👋😁 👋😁 👋😁 
 
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/icbplnecjepkmeilnfiijbipbfkcnodp?label=Chrome%20Web%20Store)](https://chromewebstore.google.com/detail/good-bye-lms-page/icbplnecjepkmeilnfiijbipbfkcnodp)
+[![Firefox Add-ons](https://img.shields.io/amo/v/good-bye-lms-page?label=Firefox%20Add-ons)](https://addons.mozilla.org/ja/firefox/addon/good-bye-lms-page/)
+
 アカンサスポータルのトップからLMSへのリンクがなくなる気がしたので復活させるためのChrome拡張機能です。😁
 
 ## 開発の経緯 👨👋😁 👋😁 👋😁 👋😁 👋😁 
@@ -16,31 +19,33 @@
 
 ## インストール方法 👋😁👋😁👋😁👋😁👋😁👋😁👋😁 
 
-※Chrome 版と Firefox 版がありますが、Chrome 版を強くおすすめしています
+1. ストアからインストールする（通常はこれでOK）
+   - Chrome Web Store: [Good Bye LMS Page](https://chromewebstore.google.com/detail/good-bye-lms-page/icbplnecjepkmeilnfiijbipbfkcnodp)
+   - Firefox Add-ons: [Good Bye LMS Page](https://addons.mozilla.org/ja/firefox/addon/good-bye-lms-page/)
+   - ストアは公開反映や審査の都合で、GitHub の最新版より更新が遅れている場合があります(大きな問題はない)
 
-1. [リリース](https://github.com/ogawa3427/goodByeLMSPage/releases)からパッケージをダウンロードして解凍する、次のステップではそのフォルダを指定します  
-
-2. Chrome の場合  
-アドレスバーに `chrome://extensions` と入力して開き、画面右上の開発者モードをONにしたら左上の「パッケージ化されていない拡張機能を読み込む」をクリック。さっき解凍したフォルダを選択する
-
-3. Firefox の場合  
-ストア版がありますが、以下の理由から **Chrome 版を強くおすすめします**:
-- [Firefox アドオン版 Good Bye LMS Page](https://addons.mozilla.org/ja/firefox/addon/good-bye-lms-page/) は **ストア審査の関係で Chrome よりバージョン更新が遅れます**  
-- ZIP から `about:debugging` → 「一時的なアドオンを読み込む」で入れることもできますが、**Firefox を再起動すると消えます**  
-
-4. 学務情報サービスの[履修時間割ページ](https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/Regist/RegistList.aspx)にアクセス(リンク先で「履修時間割表」を開く)
+2. 学務情報サービスの[履修時間割ページ](https://eduweb.sta.kanazawa-u.ac.jp/Portal/StudentApp/Regist/RegistList.aspx)にアクセス(リンク先で「履修・成績情報」->「履修時間割表」を開く)
    - データ取得の確認ダイアログが表示されるので「YES」をクリック
    - 授業情報が自動的に取得・保存されます
-   - 進捗はF12->Consoleで見られます
    - はじめに一回やればあとはOK
 
-5. 拡張機能を開く
+3. 拡張機能を開く
    - 👋をクリックするとミニ時間割リンクが出てきます😁
 
-![これが](./maji.png)
+![これが](./maji.png)  
 これの中身もいじられています
 
-6. あとはよしなに
+4. あとはよしなに
+
+### 補足: どうしても最新版が必要なとき（ZIP版）
+
+ストア版の更新待ちが厳しいときだけ使ってください。導入後は上の **2番** に合流します。
+
+1. [リリース](https://github.com/ogawa3427/goodByeLMSPage/releases)からパッケージをダウンロードして解凍する
+2. Chrome の場合  
+アドレスバーに `chrome://extensions` と入力して開き、画面右上の開発者モードをONにしたら左上の「パッケージ化されていない拡張機能を読み込む」をクリック。解凍したフォルダを選択する
+3. Firefox の場合  
+ZIP から `about:debugging` → 「一時的なアドオンを読み込む」で入れられますが、**Firefox を再起動すると消えます**
 
 <a id="update"></a>
 ## アップデート方法 👋😁👋😁👋😁👋😁👋😁👋😁👋😁👋😁
