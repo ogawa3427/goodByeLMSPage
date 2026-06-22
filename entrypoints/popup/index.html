@@ -375,6 +375,17 @@
         color: #2a7a2a;
         min-height: 14px;
       }
+
+      .settings-row select {
+        font-size: 11px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        background: #f8f8f8;
+        padding: 2px 4px;
+        color: #444;
+        cursor: pointer;
+        max-width: 130px;
+      }
     </style>
   </head>
   <body>
@@ -442,6 +453,12 @@
     <details id="data-settings">
       <summary>データ設定</summary>
       <div class="settings-body">
+        <div class="settings-row">
+          <span>表示する期間</span>
+          <select id="display-quarter-select">
+            <option value="">自動</option>
+          </select>
+        </div>
         <div class="settings-row">
           <span>登録データを削除</span>
           <button id="btn-delete" class="danger">削除</button>

@@ -82,8 +82,9 @@ async function fetchUpdateCheck(): Promise<void> {
 async function initLectureMini() {
   await migrateLectureData();
 
-  const result = await browser.storage.local.get('allLectureData');
+  const result = await browser.storage.local.get(['allLectureData', 'displayQuarterOverride']);
   const allData: QuarterData[] = result.allLectureData ?? [];
+  const override = result.displayQuarterOverride as { year: number; quarter: 1 | 2 | 3 | 4 } | null | undefined;
   const section = document.getElementById('lecture-mini-section')!;
   section.innerHTML = '';
 
@@ -91,16 +92,28 @@ async function initLectureMini() {
   const currentYear = getAcademicYear(now);
   const currentQ = getQuarterFromDate(now);
 
-  const byCurrent = allData.find(d => d.year === currentYear && d.quarter === currentQ);
-  const byLatest = [...allData].sort((a, b) => (b.registeredAt ?? 0) - (a.registeredAt ?? 0))[0];
-  const picked = byCurrent?.entries?.length ? byCurrent : (byLatest?.entries?.length ? byLatest : undefined);
+  let picked: QuarterData | undefined;
 
-  // ヘッダー（現在Qが空なら、直近の登録データを表示）
+  if (override) {
+    picked = allData.find(d => d.year === override.year && d.quarter === override.quarter && d.entries?.length);
+  }
+
+  if (!picked && !override) {
+    const byCurrent = allData.find(d => d.year === currentYear && d.quarter === currentQ);
+    const byLatest = [...allData].sort((a, b) => (b.registeredAt ?? 0) - (a.registeredAt ?? 0))[0];
+    picked = byCurrent?.entries?.length ? byCurrent : (byLatest?.entries?.length ? byLatest : undefined);
+  }
+
+  // ヘッダー
   const header = document.createElement('div');
   header.className = 'mini-header';
-  header.textContent = picked
-    ? `${picked.year}年度 Q${picked.quarter}`
-    : `${currentYear}年度 Q${currentQ}`;
+  if (override) {
+    header.textContent = `${override.year}年度 Q${override.quarter}`;
+  } else {
+    header.textContent = picked
+      ? `${picked.year}年度 Q${picked.quarter}`
+      : `${currentYear}年度 Q${currentQ}`;
+  }
   section.appendChild(header);
 
   if (!picked) {
@@ -406,8 +419,9 @@ function initDataSettings() {
 
   document.getElementById('btn-delete')!.addEventListener('click', async () => {
     if (!confirm('全期間の登録データをすべて削除しますか？')) return;
-    await browser.storage.local.remove(['allLectureData', 'lectureData', 'lectureRegisteredAt']);
+    await browser.storage.local.remove(['allLectureData', 'lectureData', 'lectureRegisteredAt', 'displayQuarterOverride']);
     initLectureMini();
+    populateDisplayQuarterSelect();
     feedback.style.color = '#c0392b';
     feedback.textContent = '削除しました';
     setTimeout(() => { feedback.textContent = ''; }, 2000);
@@ -439,6 +453,7 @@ function initDataSettings() {
       if (!Array.isArray(parsed)) throw new Error('配列ではありません');
       await browser.storage.local.set({ allLectureData: parsed });
       await initLectureMini();
+      await populateDisplayQuarterSelect();
       const total = parsed.reduce((acc: number, q: QuarterData) => acc + (q.entries?.length ?? 0), 0);
       feedback.style.color = '#2a7a2a';
       feedback.textContent = `${parsed.length} 期間・${total} 件をインポートしました`;
@@ -447,6 +462,50 @@ function initDataSettings() {
       feedback.style.color = '#c0392b';
       feedback.textContent = `失敗: ${e}`;
     }
+  });
+}
+
+async function populateDisplayQuarterSelect() {
+  const select = document.getElementById('display-quarter-select') as HTMLSelectElement;
+
+  const result = await browser.storage.local.get(['allLectureData', 'displayQuarterOverride']);
+  const allData: QuarterData[] = result.allLectureData ?? [];
+  const override = result.displayQuarterOverride as { year: number; quarter: 1 | 2 | 3 | 4 } | null | undefined;
+
+  select.innerHTML = '';
+
+  const autoOpt = document.createElement('option');
+  autoOpt.value = '';
+  autoOpt.textContent = '自動';
+  select.appendChild(autoOpt);
+
+  const sorted = [...allData]
+    .filter(d => d.entries?.length)
+    .sort((a, b) => (a.year !== b.year ? b.year - a.year : b.quarter - a.quarter));
+
+  for (const d of sorted) {
+    const opt = document.createElement('option');
+    opt.value = `${d.year}-${d.quarter}`;
+    opt.textContent = `${d.year}年度 Q${d.quarter}`;
+    select.appendChild(opt);
+  }
+
+  select.value = override ? `${override.year}-${override.quarter}` : '';
+}
+
+function initDisplayQuarterSetting() {
+  const select = document.getElementById('display-quarter-select') as HTMLSelectElement;
+  populateDisplayQuarterSelect();
+
+  select.addEventListener('change', async () => {
+    const val = select.value;
+    if (!val) {
+      await browser.storage.local.remove('displayQuarterOverride');
+    } else {
+      const [year, quarter] = val.split('-').map(Number);
+      await browser.storage.local.set({ displayQuarterOverride: { year, quarter: quarter as 1 | 2 | 3 | 4 } });
+    }
+    await initLectureMini();
   });
 }
 
@@ -470,3 +529,4 @@ initLectureMini();
 initVersionSection();
 initDataSettings();
 initOthersRowSetting();
+initDisplayQuarterSetting();
